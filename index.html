@@ -1,12 +1,1323 @@
 <!doctype html>
 <html lang="he" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ניהול פרויקטים - הרי נצרת</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ניהול פרויקטים · הרי נצרת</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&family=Assistant:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#14202B; --ink2:#54697A; --ink3:#8899A6;
+  --line:#DCE4E8; --line2:#EDF1F3;
+  --bg:#F1F4F6; --surface:#FFFFFF;
+  --brand:#0E6B75; --brand-dk:#08505A; --brand-soft:#E3F0F1;
+  --amber:#9A6114; --amber-soft:#FBF0DF;
+  --danger:#9E2B2B; --danger-soft:#FBE9E9;
+  --ok:#1E6B4A;
+  --r:10px;
+  --shadow:0 1px 2px rgba(20,32,43,.05), 0 4px 16px rgba(20,32,43,.05);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg); color:var(--ink); font-family:"Assistant",system-ui,-apple-system,"Segoe UI",sans-serif; font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:"Heebo",sans-serif; margin:0; letter-spacing:-.02em; line-height:1.2}
+.num{font-variant-numeric:tabular-nums; font-feature-settings:"tnum"}
+button{font-family:inherit; font-size:inherit; cursor:pointer}
+input,select,textarea{font-family:inherit; font-size:inherit}
+a{color:var(--brand)}
+
+.topbar{background:var(--ink); color:#fff; padding:14px 20px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; position:sticky; top:0; z-index:50}
+.topbar h1{font-size:17px; font-weight:800; color:#fff}
+.topbar .sub{font-size:13px; color:#93A6B3; font-weight:500}
+.topbar .spacer{flex:1}
+.topbar .who{font-size:13px; color:#93A6B3; text-align:left}
+.topbar .who b{color:#fff; display:block; font-weight:700}
+.tbtn{background:#22323F; border:1px solid #33454F; color:#C9D6DE; padding:6px 12px; border-radius:7px; font-size:13px; font-weight:600}
+.tbtn:hover{background:#2C3E4B; color:#fff}
+.tbtn .badge{display:inline-block; min-width:19px; height:19px; line-height:19px; padding:0 5px;
+  margin-right:7px; border-radius:999px; background:#C8563F; color:#fff;
+  font-size:12px; font-weight:800; text-align:center; font-variant-numeric:tabular-nums}
+.pend-banner{display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  padding:13px 16px; margin-bottom:16px; border-radius:9px;
+  background:var(--amber-soft); border:1px solid #EBD5B0; color:var(--amber); font-weight:600}
+.pend-banner .spacer{flex:1}
+.conn{font-size:12px; padding:4px 10px; border-radius:999px; background:#22323F; color:#93A6B3; display:flex; align-items:center; gap:6px}
+.conn .dot{width:7px;height:7px;border-radius:50%;background:#5A6B78}
+.conn.ok .dot{background:#3BAA7A} .conn.ok{color:#9FD9BF}
+.conn.bad .dot{background:#D96B6B} .conn.bad{color:#F0B4B4}
+.wrap{max-width:1180px; margin:0 auto; padding:22px 20px 90px}
+
+.btn{border:1px solid var(--line); background:var(--surface); color:var(--ink); padding:8px 14px; border-radius:8px; font-weight:600; font-size:14px; transition:.15s; white-space:nowrap}
+.btn:hover{border-color:var(--ink3)}
+.btn.primary{background:var(--brand); border-color:var(--brand); color:#fff}
+.btn.primary:hover{background:var(--brand-dk); border-color:var(--brand-dk)}
+.btn.ghost{background:transparent; border-color:transparent; color:var(--ink2); padding:6px 8px}
+.btn.ghost:hover{background:var(--line2); color:var(--ink)}
+.btn.danger{color:var(--danger); border-color:transparent; background:transparent; padding:6px 8px}
+.btn.danger:hover{background:var(--danger-soft)}
+.btn.sm{padding:5px 10px; font-size:13px}
+.btn.wide{width:100%; padding:11px}
+.btn:disabled{opacity:.5; cursor:not-allowed}
+
+.card{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow)}
+.card-h{padding:16px 18px; border-bottom:1px solid var(--line2); display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+.card-h h2{font-size:16px; font-weight:700}
+.card-h h3{font-size:14px; font-weight:700}
+.card-h .spacer{flex:1}
+.card-b{padding:18px}
+.section-title{font-size:13px; font-weight:700; color:var(--ink3); letter-spacing:.04em; margin:26px 0 10px}
+
+/* ---- מסך כניסה ---- */
+.gate{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; background:var(--ink)}
+.gate-box{width:100%; max-width:400px; background:var(--surface); border-radius:14px; padding:32px; box-shadow:0 24px 70px rgba(0,0,0,.35)}
+.gate-box h2{font-size:21px; font-weight:800; margin-bottom:4px}
+.gate-box .lead{color:var(--ink2); font-size:14px; margin-bottom:24px}
+.gate-tabs{display:flex; gap:6px; margin-bottom:20px; background:var(--line2); padding:4px; border-radius:9px}
+.gate-tabs button{flex:1; padding:8px; border:0; background:transparent; border-radius:7px; font-weight:700; font-size:14px; color:var(--ink2)}
+.gate-tabs button.on{background:var(--surface); color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.09)}
+.gate-note{margin-top:18px; font-size:13px; color:var(--ink3); text-align:center; line-height:1.5}
+.gate-link{background:none;border:0;color:var(--brand);font-weight:600;font-size:13px;padding:0;text-decoration:underline}
+.pw{position:relative}
+.pw input{padding-left:44px}
+.pw .peek{position:absolute; left:5px; top:50%; transform:translateY(-50%); background:none; border:0; padding:6px 8px; border-radius:6px; color:var(--ink3); font-size:12.5px; font-weight:700}
+.pw .peek:hover{background:var(--line2); color:var(--ink2)}
+.pw-row{display:flex; justify-content:space-between; align-items:baseline; gap:8px}
+
+.cost{border:1px solid var(--line); border-radius:9px; overflow:hidden}
+.cost-row{display:flex; align-items:center; gap:12px; padding:11px 15px; border-bottom:1px solid var(--line2)}
+.cost-row.base{background:#F7FAFB}
+.cost-row.virt .cost-lbl{color:var(--amber)}
+.cost-row.virt .cost-bar i{background:repeating-linear-gradient(-45deg,#D9B87C,#D9B87C 5px,#E8CE9C 5px,#E8CE9C 10px)}
+.cmp{display:flex; align-items:center; gap:16px; flex-wrap:wrap; padding:13px 16px; margin-bottom:14px;
+     border:1px solid var(--line); border-radius:9px; background:#FAFCFC}
+.cmp .k{display:block; font-size:12px; color:var(--ink2); font-weight:600}
+.cmp b{font-size:16px; font-family:"Heebo"; font-weight:700}
+.cmp .arw{color:var(--ink3); font-size:18px}
+.cmp .spacer{flex:1}
+.cmp .gapbox{padding:6px 12px; border-radius:7px}
+.cmp .gapbox.good{background:var(--ok-soft,#E7F1EA)} .cmp .gapbox.good b{color:var(--ok)}
+.cmp .gapbox.bad{background:var(--danger-soft)} .cmp .gapbox.bad b{color:var(--danger)}
+.cmp .pctg{font-size:12.5px; color:var(--ink2); margin-right:5px}
+.cost-bar{flex:1; height:8px; background:var(--line2); border-radius:4px; overflow:hidden; min-width:50px}
+.cost-bar i{display:block; height:100%; background:var(--brand); border-radius:4px; transition:width .5s cubic-bezier(.2,.7,.3,1)}
+.cost-row.base .cost-bar i{background:var(--ink)}
+.cost-lbl{min-width:135px; font-weight:600; font-size:14px}
+.cost-lbl small{display:block; font-weight:400; font-size:12.5px; color:var(--ink3)}
+.cost-pct{width:56px; text-align:left; font-variant-numeric:tabular-nums; font-size:13px; color:var(--ink2); font-weight:600}
+.cost-val{width:120px; text-align:left; font-variant-numeric:tabular-nums; font-weight:700; font-size:14px}
+.cost-sum{display:flex; align-items:center; gap:12px; padding:11px 15px; background:#F7FAFB; border-top:1px solid var(--line)}
+.cost-sum.total{background:var(--ink); color:#fff}
+.cost-sum .l{flex:1; font-weight:700; font-size:14px}
+.cost-sum .v{font-variant-numeric:tabular-nums; font-weight:700; font-size:16px; font-family:"Heebo"}
+
+.stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(155px,1fr)); gap:1px; background:var(--line2); border-radius:8px; overflow:hidden; border:1px solid var(--line)}
+.stat{background:var(--surface); padding:13px 15px}
+.stat .k{font-size:12.5px; color:var(--ink2); font-weight:600; margin-bottom:3px}
+.stat .v{font-size:19px; font-weight:700; font-family:"Heebo"; letter-spacing:-.02em}
+.stat .v.dim{color:var(--ink3)} .stat .v.neg{color:var(--danger)} .stat .v.pos{color:var(--ok)}
+
+.tbl-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch}
+table{width:100%; border-collapse:collapse; font-size:14px}
+thead th{text-align:right; padding:10px 14px; font-size:12.5px; font-weight:700; color:var(--ink2); background:#F7F9FA; border-bottom:1px solid var(--line); white-space:nowrap}
+tbody td{padding:11px 14px; border-bottom:1px solid var(--line2); vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover{background:#F7FAFB}
+td.money{font-variant-numeric:tabular-nums; font-weight:600; white-space:nowrap}
+td.act{text-align:left; white-space:nowrap}
+.pname{font-weight:700}
+.pnum{font-size:12.5px; color:var(--ink3); font-variant-numeric:tabular-nums}
+
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+.grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px}
+.field{display:flex; flex-direction:column; gap:5px}
+.field label{font-size:13px; font-weight:600; color:var(--ink2)}
+.field .hint{font-size:12px; color:var(--ink3); font-weight:400}
+.field input,.field select,.field textarea{padding:9px 11px; border:1px solid var(--line); border-radius:7px; background:var(--surface); color:var(--ink); width:100%}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none; border-color:var(--brand); box-shadow:0 0 0 3px var(--brand-soft)}
+.field input[type=number]{font-variant-numeric:tabular-nums}
+.field input:disabled{background:var(--line2); color:var(--ink2)}
+.form-actions{display:flex; gap:10px; margin-top:18px; padding-top:16px; border-top:1px solid var(--line2)}
+.radio-row{display:flex; gap:8px; flex-wrap:wrap}
+.radio-row label{display:flex; align-items:center; gap:6px; padding:8px 12px; border:1px solid var(--line); border-radius:7px; cursor:pointer; font-size:13.5px; font-weight:600; color:var(--ink2)}
+.radio-row label.on{border-color:var(--brand); background:var(--brand-soft); color:var(--brand-dk)}
+.radio-row input{margin:0}
+
+.tag{display:inline-block; padding:3px 9px; border-radius:5px; font-size:12.5px; font-weight:700}
+.tag.contractor{background:var(--ink); color:#fff}
+.tag.designer{background:#EDEAF6; color:#4A3D7A}
+.tag.inspector{background:#FBF0DF; color:var(--amber)}
+.tag.management{background:#E7F1EA; color:var(--ok)}
+.tag.other{background:var(--line2); color:var(--ink2)}
+.tag.st-inv{background:#EAE7F2;color:#463C6B}
+.tag.st-planning{background:#EDF1F3;color:var(--ink2)}
+.tag.loc{background:#F0F0EC;color:#4A4A42;border:1px solid #E0E0D8}
+.tag.st-tender{background:#FBF0DF;color:var(--amber)}
+.tag.st-execution{background:#E6EFF1;color:#0B5A63}
+.tag.st-done{background:#E7F1EA;color:var(--ok)}
+.tag.r-admin{background:var(--ink);color:#fff}
+.tag.r-editor{background:#E6EFF1;color:#0B5A63}
+.tag.r-viewer{background:var(--line2);color:var(--ink2)}
+.tag.r-pending{background:var(--amber-soft);color:var(--amber)}
+.tag.sec-water{background:#DCEBF5;color:#12557F}
+.tag.sec-sewage{background:#E6E4D8;color:#5C5330}
+.tag.sec-both{background:#DCEBF5;color:#12557F;background:linear-gradient(100deg,#DCEBF5 50%,#E6E4D8 50%)}
+.tag.kind-up{background:#EFE6F3;color:#5B3B6B}
+.tag.kind-dev{background:#E2F0E8;color:#1F6B47}
+.filters{display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:12px 18px; border-bottom:1px solid var(--line2); background:#FAFCFC}
+.filters .lbl{font-size:12.5px; font-weight:700; color:var(--ink3); margin-left:2px}
+.fchip{border:1px solid var(--line); background:var(--surface); color:var(--ink2); padding:5px 12px; border-radius:999px; font-size:13px; font-weight:600}
+.fchip:hover{border-color:var(--ink3)}
+.fchip.on{background:var(--ink); border-color:var(--ink); color:#fff}
+.fsep{width:1px; height:20px; background:var(--line); margin:0 4px}
+.fsel{border:1px solid var(--line); background:var(--surface); color:var(--ink); padding:5px 10px; border-radius:999px; font-size:13px; font-weight:600; font-family:inherit}
+.fsel:focus{outline:none; border-color:var(--brand)}
+.rollhead{display:flex; align-items:center; gap:8px; padding:11px 18px; border-top:1px solid var(--line); background:#FAFCFC}
+.rollup{display:flex; gap:1px; background:var(--line2); border-top:1px solid var(--line); flex-wrap:wrap}
+.rollup > div{background:#FAFCFC; padding:11px 16px; flex:1; min-width:150px}
+.rollup .k{font-size:12px; color:var(--ink2); font-weight:600; display:flex; align-items:center; gap:6px}
+.rollup .v{font-size:16px; font-weight:700; font-family:"Heebo"; font-variant-numeric:tabular-nums; margin-top:2px}
+.tag.sm{font-size:11.5px; padding:2px 7px}
+
+.doc{display:flex; align-items:center; gap:10px; padding:8px 12px; border:1px solid var(--line2); border-radius:7px; background:#FCFDFD; font-size:13.5px}
+.doc .dt{font-weight:700; color:var(--ink)}
+.doc .dm{color:var(--ink3); font-size:12.5px}
+.doc .spacer{flex:1}
+
+.empty{padding:40px 20px; text-align:center; color:var(--ink3)}
+.empty p{margin:0 0 14px}
+.crumb{display:flex; align-items:center; gap:8px; margin-bottom:16px; font-size:14px; color:var(--ink2); flex-wrap:wrap}
+.crumb button{background:none;border:0;color:var(--brand);font-weight:600;padding:0}
+.crumb button:hover{text-decoration:underline}
+.toast{position:fixed; bottom:20px; right:20px; z-index:200; background:var(--ink); color:#fff; padding:12px 18px; border-radius:9px; box-shadow:0 8px 30px rgba(0,0,0,.22); font-weight:600; font-size:14px; max-width:min(440px,88vw)}
+.toast.err{background:var(--danger)}
+.banner{padding:12px 16px; border-radius:8px; font-size:14px; margin-bottom:16px; font-weight:600}
+.banner.err{background:var(--danger-soft); color:var(--danger); border:1px solid #EFC9C9}
+.banner.info{background:var(--brand-soft); color:var(--brand-dk); border:1px solid #C5DFE2}
+.banner.warn{background:var(--amber-soft); color:var(--amber); border:1px solid #EBD5B0}
+.spin{display:inline-block;width:15px;height:15px;border:2px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+.ov{position:fixed;inset:0;background:rgba(20,32,43,.45);z-index:150;display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto}
+.modal{background:var(--surface);border-radius:12px;width:100%;max-width:660px;box-shadow:0 20px 60px rgba(0,0,0,.25);margin:auto}
+.modal-h{padding:16px 20px;border-bottom:1px solid var(--line2);display:flex;align-items:center}
+.modal-h h3{font-size:16px;font-weight:700;flex:1}
+.modal-b{padding:20px}
+
+@media (max-width:720px){
+  .grid2,.grid3{grid-template-columns:1fr}
+  .wrap{padding:16px 13px 70px}
+  .card-b{padding:14px}
+  thead th,tbody td{padding:9px 10px}
+  .topbar{padding:12px 14px}
+  .topbar .who{display:none}
+  .cost-lbl{min-width:auto} .cost-bar{display:none} .cost-val{width:auto;flex:1}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="root"><div class="gate"><div class="gate-box" style="text-align:center"><span class="spin"></span></div></div></div>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+
+/* ═══════════ הגדרות ═══════════ */
+const SUPABASE_URL = 'https://tahsjngaaakjbptujfne.supabase.co'
+const SUPABASE_KEY = 'sb_publishable_qMpIAT8T-KhqdqqqF6L0ZQ_RGtNsl_U'
+const BUCKET = 'project-docs'
+const VAT  = 0.18
+const HOLD = 0.05
+/* ══════════════════════════════ */
+
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY)
+const root = document.getElementById('root')
+
+const ils  = n => (n===null||n===undefined||n==='') ? '—' : new Intl.NumberFormat('he-IL',{style:'currency',currency:'ILS',maximumFractionDigits:0}).format(Number(n))
+const ils2 = n => (n===null||n===undefined||n==='') ? '—' : new Intl.NumberFormat('he-IL',{style:'currency',currency:'ILS',minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(n))
+const dmy  = d => d ? new Date(d).toLocaleDateString('he-IL') : '—'
+const num  = v => { const n=parseFloat(v); return isNaN(n)?null:n }
+const esc  = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))
+
+const PARTY  = { contractor:'קבלן מבצע', designer:'מתכנן', inspector:'מפקח', management:'ניהול פרויקט', other:'אחר' }
+const STATUS = { investment:{t:'תוכנית השקעות',c:'st-inv'}, planning:{t:'תכנון',c:'st-planning'}, tender:{t:'מכרז',c:'st-tender'}, execution:{t:'ביצוע',c:'st-execution'}, done:{t:'הושלם',c:'st-done'} }
+const LOCALITY = { nazareth:'נצרת', reineh:'ריינה', yafia:'יפיע', iksal:'אכסאל', eilut:'עילוט', eilabun:'עילבון', multi:'רב־יישובי' }
+const FUND   = { self:'מימון עצמי', grant:'מענק', loan:'הלוואה', partner:'שותף', other:'אחר' }
+const DOCT   = { contract:'חוזה', work_order:'הזמנת עבודה', commencement:'צו התחלת עבודה',
+                 guarantee_perf:'ערבות ביצוע', guarantee_bid:'ערבות מכרז', guarantee_warranty:'ערבות בדק',
+                 boq:'כתב כמויות', other:'אחר' }
+const ROLES  = { admin:'מנהל מערכת', editor:'עריכה', viewer:'צפייה בלבד', pending:'ממתין לאישור' }
+const SECTOR = { water:{t:'מים',c:'sec-water'}, sewage:{t:'ביוב',c:'sec-sewage'}, both:{t:'מים וביוב',c:'sec-both'} }
+const KIND   = { upgrade:{t:'שדרוג',c:'kind-up'}, development:{t:'פיתוח',c:'kind-dev'} }
+
+function toast(msg, isErr=false){
+  document.querySelectorAll('.toast').forEach(e=>e.remove())
+  const t=document.createElement('div'); t.className='toast'+(isErr?' err':''); t.textContent=msg
+  document.body.appendChild(t); setTimeout(()=>t.remove(), isErr?6500:2800)
+}
+
+let state = { me:null, view:'list', projectId:null, projects:[], project:null,
+              parties:[], invoices:[], funding:[], docs:[], users:[], pending:0,
+              filter:{ status:'', sector:'', kind:'', loc:'', group:'sector' } }
+
+const canEdit = ()=> ['admin','editor'].includes(state.me?.role)
+const isAdmin = ()=> state.me?.role === 'admin'
+
+/* ═══════════ כניסה ═══════════ */
+// שדה סיסמה עם כפתור הצגה
+function pwField(id, label, autoc, extra=''){
+  return `<div class="field" style="margin-bottom:14px">
+    <div class="pw-row"><label for="${id}">${label}</label>${extra}</div>
+    <div class="pw">
+      <input id="${id}" type="password" autocomplete="${autoc}">
+      <button type="button" class="peek" data-peek="${id}" aria-label="הצגת הסיסמה">הצגה</button>
+    </div>
+  </div>`
+}
+function bindPeek(scope){
+  scope.querySelectorAll('[data-peek]').forEach(b=>{
+    b.onclick=()=>{
+      const i=scope.querySelector('#'+b.dataset.peek)
+      const show = i.type==='password'
+      i.type = show?'text':'password'
+      b.textContent = show?'הסתרה':'הצגה'
+      i.focus()
+    }
+  })
+}
+
+function renderGate(mode='in', msg='', ok=''){
+  const titles={ in:'כניסה', up:'הרשמה', reset:'שחזור סיסמה' }
+  root.innerHTML = `
+  <div class="gate"><div class="gate-box">
+    <h2>ניהול פרויקטים הנדסיים</h2>
+    <div class="lead">תאגיד המים והביוב הרי נצרת</div>
+    <div class="gate-tabs">
+      <button class="${mode==='in'?'on':''}" data-m="in">כניסה</button>
+      <button class="${mode==='up'?'on':''}" data-m="up">הרשמה</button>
+    </div>
+    ${msg?`<div class="banner err">${esc(msg)}</div>`:''}
+    ${ok?`<div class="banner info">${esc(ok)}</div>`:''}
+    ${mode==='reset'?`<div class="banner info">נשלח אליך קישור לאיפוס הסיסמה. הקישור תקף לשעה אחת.</div>`:''}
+    ${mode==='up'?`<div class="field" style="margin-bottom:14px"><label>שם מלא</label><input id="a_name"></div>`:''}
+    <div class="field" style="margin-bottom:14px"><label>אימייל</label><input id="a_mail" type="email" autocomplete="username"></div>
+    ${mode==='reset' ? '' : pwField('a_pass','סיסמה', mode==='up'?'new-password':'current-password',
+        mode==='in'?`<button class="gate-link" data-m="reset">שכחתי סיסמה</button>`:'')}
+    <button class="btn primary wide" id="a_go">${mode==='up'?'יצירת חשבון':(mode==='reset'?'שליחת קישור איפוס':'כניסה')}</button>
+    <div class="gate-note">${
+      mode==='up'   ? 'לאחר ההרשמה החשבון ימתין לאישור מנהל המערכת.' :
+      mode==='reset'? 'הזן את האימייל שאיתו נרשמת, ויישלח אליך קישור להגדרת סיסמה חדשה.' :
+                      'הגישה מוגבלת לעובדי התאגיד ולגורמים מאושרים.'}</div>
+  </div></div>`
+
+  root.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>renderGate(b.dataset.m))
+  bindPeek(root)
+  const go=root.querySelector('#a_go')
+  const submit=async ()=>{
+    const mail=root.querySelector('#a_mail').value.trim()
+    const pass=mode==='reset'?null:root.querySelector('#a_pass').value
+    if(!mail) return renderGate(mode,'נדרש אימייל')
+    if(mode!=='reset' && !pass) return renderGate(mode,'נדרשת סיסמה')
+    go.disabled=true; go.textContent='רגע…'
+    try{
+      if(mode==='reset'){
+        const { error } = await sb.auth.resetPasswordForEmail(mail, { redirectTo: location.href.split('#')[0] })
+        if(error) throw error
+        return renderGate('in','', `אם קיים חשבון עבור ${mail}, נשלח אליו קישור לאיפוס הסיסמה. כדאי לבדוק גם בתיקיית הספאם.`)
+      }
+      if(mode==='up'){
+        const name=root.querySelector('#a_name').value.trim()
+        const { error } = await sb.auth.signUp({ email:mail, password:pass, options:{ data:{ full_name:name } } })
+        if(error) throw error
+      } else {
+        const { error } = await sb.auth.signInWithPassword({ email:mail, password:pass })
+        if(error) throw error
+      }
+      await boot()
+    }catch(err){ renderGate(mode, authErr(err)) }
+  }
+  go.onclick=submit
+  root.querySelectorAll('#a_mail,#a_pass,#a_name').forEach(i=>i.onkeydown=e=>{ if(e.key==='Enter') submit() })
+  root.querySelector(mode==='up'?'#a_name':'#a_mail').focus()
+}
+
+// מסך הגדרת סיסמה חדשה — נפתח מהקישור שנשלח במייל
+function renderNewPassword(msg=''){
+  root.innerHTML = `
+  <div class="gate"><div class="gate-box">
+    <h2>הגדרת סיסמה חדשה</h2>
+    <div class="lead">בחר סיסמה חדשה לחשבון שלך</div>
+    ${msg?`<div class="banner err">${esc(msg)}</div>`:''}
+    ${pwField('n_pass','סיסמה חדשה','new-password','<span class="hint">לפחות 6 תווים</span>')}
+    ${pwField('n_pass2','אימות סיסמה','new-password')}
+    <button class="btn primary wide" id="n_go" style="margin-top:6px">שמירת הסיסמה</button>
+  </div></div>`
+  bindPeek(root)
+  const go=root.querySelector('#n_go')
+  const submit=async ()=>{
+    const p1=root.querySelector('#n_pass').value, p2=root.querySelector('#n_pass2').value
+    if(p1.length<6) return renderNewPassword('הסיסמה חייבת להכיל לפחות 6 תווים.')
+    if(p1!==p2)     return renderNewPassword('שתי הסיסמאות אינן זהות.')
+    go.disabled=true; go.textContent='שומר…'
+    try{
+      const { error } = await sb.auth.updateUser({ password:p1 })
+      if(error) throw error
+      history.replaceState(null,'',location.pathname+location.search)
+      toast('הסיסמה עודכנה')
+      await boot()
+    }catch(err){ renderNewPassword(authErr(err)) }
+  }
+  go.onclick=submit
+  root.querySelectorAll('#n_pass,#n_pass2').forEach(i=>i.onkeydown=e=>{ if(e.key==='Enter') submit() })
+  root.querySelector('#n_pass').focus()
+}
+
+// שינוי סיסמה מתוך המערכת
+function accountModal(){
+  modal('החשבון שלי', `
+    <div class="stats" style="margin-bottom:18px">
+      <div class="stat"><div class="k">שם</div><div class="v" style="font-size:15px">${esc(state.me.full_name||'—')}</div></div>
+      <div class="stat"><div class="k">אימייל</div><div class="v" style="font-size:15px">${esc(state.me.email||'')}</div></div>
+      <div class="stat"><div class="k">תפקיד</div><div class="v" style="font-size:15px">${ROLES[state.me.role]}</div></div>
+    </div>
+    <div class="field" style="margin-bottom:14px"><label>שם מלא</label><input id="m_name" value="${esc(state.me.full_name||'')}"></div>
+    <button class="btn" id="m_saveName">עדכון השם</button>
+    <div class="section-title" style="margin:22px 0 10px">שינוי סיסמה</div>
+    ${pwField('m_p1','סיסמה חדשה','new-password','<span class="hint">לפחות 6 תווים</span>')}
+    ${pwField('m_p2','אימות סיסמה','new-password')}
+    <div class="form-actions"><button class="btn primary" id="m_savePw">עדכון הסיסמה</button><button class="btn" data-c>סגירה</button></div>`,
+  (ov,close)=>{
+    ov.querySelector('[data-c]').onclick=close
+    bindPeek(ov)
+    ov.querySelector('#m_saveName').onclick=async e=>{
+      const n=ov.querySelector('#m_name').value.trim()
+      e.target.disabled=true
+      const { error } = await sb.from('profiles').update({full_name:n}).eq('id',state.me.id)
+      e.target.disabled=false
+      if(error) return toast(dbErr(error), true)
+      state.me.full_name=n; close(); toast('השם עודכן'); shell(); await refresh()
+    }
+    ov.querySelector('#m_savePw').onclick=async e=>{
+      const p1=ov.querySelector('#m_p1').value, p2=ov.querySelector('#m_p2').value
+      if(p1.length<6) return toast('הסיסמה חייבת להכיל לפחות 6 תווים', true)
+      if(p1!==p2)     return toast('שתי הסיסמאות אינן זהות', true)
+      e.target.disabled=true; e.target.textContent='שומר…'
+      const { error } = await sb.auth.updateUser({ password:p1 })
+      e.target.disabled=false; e.target.textContent='עדכון הסיסמה'
+      if(error) return toast(authErr(error), true)
+      close(); toast('הסיסמה עודכנה')
+    }
+  })
+}
+
+function authErr(err){
+  const m=err?.message||String(err)
+  if(/Invalid login credentials/i.test(m)) return 'אימייל או סיסמה שגויים.'
+  if(/already registered/i.test(m))        return 'האימייל כבר רשום במערכת. יש להיכנס במקום להירשם.'
+  if(/at least 6/i.test(m))                return 'הסיסמה חייבת להכיל לפחות 6 תווים.'
+  if(/Email not confirmed/i.test(m))       return 'החשבון טרם אושר במייל.'
+  if(/rate limit|too many/i.test(m))       return 'יותר מדי ניסיונות. יש להמתין דקה.'
+  return m
+}
+
+function renderPending(){
+  root.innerHTML = `
+  <div class="gate"><div class="gate-box" style="text-align:center">
+    <h2>החשבון ממתין לאישור</h2>
+    <div class="lead" style="margin-bottom:22px">${esc(state.me?.email||'')}</div>
+    <div class="banner warn" style="text-align:right">נרשמת בהצלחה. מנהל המערכת צריך לאשר את החשבון ולקבוע לך תפקיד לפני שתוכל לגשת לנתונים.</div>
+    <button class="btn wide" id="again">בדיקה מחדש</button>
+    <div class="gate-note"><a href="#" id="out">יציאה</a></div>
+  </div></div>`
+  root.querySelector('#again').onclick=boot
+  root.querySelector('#out').onclick=async e=>{ e.preventDefault(); await sb.auth.signOut(); location.reload() }
+}
+
+/* ═══════════ שלד ═══════════ */
+function shell(){
+  root.innerHTML = `
+    <div class="topbar">
+      <div>
+        <h1>ניהול פרויקטים הנדסיים</h1>
+        <div class="sub">תאגיד המים והביוב הרי נצרת</div>
+      </div>
+      <div class="spacer"></div>
+      <div class="who"><b>${esc(state.me.full_name||state.me.email)}</b>${ROLES[state.me.role]}</div>
+      <button class="tbtn" id="navMe">החשבון שלי</button>
+      ${isAdmin()?`<button class="tbtn" id="navUsers">משתמשים${state.pending?`<span class="badge">${state.pending}</span>`:''}</button>`:''}
+      <button class="tbtn" id="navOut">יציאה</button>
+      <div class="conn ok" id="conn"><span class="dot"></span><span id="connTxt">מחובר</span></div>
+    </div>
+    <div class="wrap" id="app"><div class="empty"><span class="spin"></span></div></div>`
+  document.getElementById('navMe').onclick=accountModal
+  const u=document.getElementById('navUsers')
+  if(u) u.onclick=()=>{ state.view='users'; refresh() }
+  document.getElementById('navOut').onclick=async ()=>{ await sb.auth.signOut(); location.reload() }
+}
+const appEl = ()=>document.getElementById('app')
+function setConn(s,txt){ const el=document.getElementById('conn'); if(!el) return; el.className='conn '+s; document.getElementById('connTxt').textContent=txt }
+
+/* ═══════════ נתונים ═══════════ */
+async function loadProjects(){
+  const { data, error } = await sb.from('projects').select('*').order('created_at',{ascending:false})
+  if(error) throw error
+  state.projects = data||[]
+  const ids = state.projects.map(p=>p.id)
+  if(!ids.length) return
+  const [{data:pa},{data:iv}] = await Promise.all([
+    sb.from('contractors').select('*').in('project_id',ids),
+    sb.from('invoices').select('contractor_id,amount_without_tax,approved_amount')
+  ])
+  const byProject={}
+  ;(pa||[]).forEach(x=>(byProject[x.project_id]=byProject[x.project_id]||[]).push(x))
+  const maxCum={}, maxApp={}
+  ;(iv||[]).forEach(x=>{
+    maxCum[x.contractor_id]=Math.max(maxCum[x.contractor_id]||0, Number(x.amount_without_tax||0))
+    maxApp[x.contractor_id]=Math.max(maxApp[x.contractor_id]||0, Number(x.approved_amount||0))
+  })
+  state.projects.forEach(p=>{
+    const list=byProject[p.id]||[]
+    const bi=baseInfo(list, p)
+    let planned = bi.source==='estimate' ? bi.value : 0
+    let submitted=0
+    list.forEach(pt=>{ planned+=effContract(pt,bi.value); submitted+=maxCum[pt.id]||0 })
+    p._c={ base:bi.value, src:bi.source, planned:planned*(1+VAT), submitted:submitted*(1+VAT), parties:list.length }
+  })
+}
+
+async function loadProject(id){
+  const [{data:p,error:e1},{data:pa,error:e2}] = await Promise.all([
+    sb.from('projects').select('*').eq('id',id).single(),
+    sb.from('contractors').select('*').eq('project_id',id).order('id')
+  ])
+  if(e1) throw e1
+  if(e2) throw e2
+  state.project=p; state.parties=pa||[]
+  const pids=state.parties.map(x=>x.id)
+  const [r1,r2,r3]=await Promise.all([
+    pids.length ? sb.from('invoices').select('*').in('contractor_id',pids) : Promise.resolve({data:[]}),
+    sb.from('funding_sources').select('*').eq('project_id',id).order('id'),
+    sb.from('documents').select('*').eq('project_id',id).order('id',{ascending:false})
+  ])
+  if(r1.error) throw r1.error
+  if(r2.error) throw r2.error
+  if(r3.error) throw r3.error
+  state.invoices=(r1.data||[]).sort((a,b)=>(a.contractor_id-b.contractor_id)||(Number(a.invoice_number)-Number(b.invoice_number)))
+  state.funding=r2.data||[]
+  state.docs=r3.data||[]
+
+  if(canEdit() && state.funding.length===0){
+    const legacy=[]
+    if(Number(p.grant)) legacy.push({project_id:id,source_type:'grant',name:'מענק',amount:Number(p.grant)})
+    if(Number(p.loan))  legacy.push({project_id:id,source_type:'loan', name:'הלוואה',amount:Number(p.loan)})
+    if(legacy.length){ const {data}=await sb.from('funding_sources').insert(legacy).select(); state.funding=data||[] }
+  }
+}
+
+async function loadUsers(){
+  const { data, error } = await sb.from('profiles').select('*').order('created_at')
+  if(error) throw error
+  state.users = data||[]
+  state.pending = state.users.filter(u=>u.role==='pending').length
+}
+
+// ספירת ממתינים לאישור — למנהלים בלבד
+async function loadPending(){
+  if(!isAdmin()) return
+  const { count, error } = await sb.from('profiles').select('id',{count:'exact',head:true}).eq('role','pending')
+  if(!error) state.pending = count||0
+}
+
+/* ═══════════ חישובים ═══════════ */
+// הבסיס לחישוב האחוזים: עד בחירת קבלן — האומדן. לאחר הזכייה — ערך החוזה בפועל.
+function baseInfo(parties, project){
+  const c = parties.find(p=>p.is_base) || parties.find(p=>p.type==='contractor')
+  const contract = c ? Number(c.contract_value||0) : 0
+  const est = Number(project?.estimate||0)
+  return contract
+    ? { value:contract, source:'contract', estimate:est, party:c }
+    : { value:est,      source:'estimate', estimate:est, party:c||null }
+}
+function effContract(pt, base){
+  if(pt.is_base) return Number(pt.contract_value||0)
+  const pct = Number(pt.pct_of_base ?? pt.percentage ?? 0)
+  return pct ? base*pct/100 : Number(pt.contract_value||0)
+}
+function baseCost(){ return baseInfo(state.parties, state.project).value }
+
+function partyFinance(pt){
+  const rows=state.invoices.filter(i=>i.contractor_id===pt.id).sort((a,b)=>Number(a.invoice_number)-Number(b.invoice_number))
+  let prevNet=0
+  const calc=rows.map(r=>{
+    const cum=Number(r.amount_without_tax||0), hold=Number(r.retention||0)
+    const net=cum-hold, cur=net-prevNet; prevNet=net
+    return {...r,_cum:cum,_hold:hold,_net:net,_cur:cur,_vat:cur*VAT,_tot:cur*(1+VAT)}
+  })
+  const last=calc[calc.length-1]
+  const contract=effContract(pt, baseCost())
+  return { rows:calc, contract, cumulative:last?last._cum:0,
+    approved:calc.reduce((s,r)=>Math.max(s,Number(r.approved_amount||0)),0),
+    held:last?last._hold:0, remaining:contract-(last?last._cum:0) }
+}
+
+function projectFinance(){
+  const bi = baseInfo(state.parties, state.project)
+  const lines = []
+  if(bi.source==='estimate' && bi.value){
+    lines.push({ virtual:true, name:'אומדן עלות ביצוע', role:'קבלן מבצע · טרם נבחר',
+                 value:bi.value, pct:100, isBase:true })
+  }
+  state.parties.forEach(pt=>{
+    const f = partyFinance(pt)
+    lines.push({ pt, name:pt.name, role:PARTY[pt.type]||pt.type, value:f.contract,
+                 pct: bi.value?(f.contract/bi.value)*100:0, f,
+                 isBase: !!(bi.party && bi.party.id===pt.id) })
+  })
+  const net=lines.reduce((s,l)=>s+l.value,0)
+  const planned=net*(1+VAT)
+  const frame=Number(state.project?.total_budget_with_tax||0)
+  const funded=state.funding.reduce((s,f)=>s+Number(f.amount||0),0)
+  return { bi, base:bi.value, lines, net, vat:net*VAT, planned, frame, funded,
+    frameGap: frame?frame-planned:null, fundGap:funded-planned,
+    submitted: lines.reduce((s,l)=>s+(l.f?l.f.cumulative:0),0)*(1+VAT),
+    approved:  lines.reduce((s,l)=>s+(l.f?l.f.approved:0),0)*(1+VAT) }
+}
+
+/* ═══════════ משתמשים ═══════════ */
+function viewUsers(){
+  const pend = state.users.filter(u=>u.role==='pending')
+  appEl().innerHTML = `
+    <div class="crumb"><button id="back">פרויקטים</button><span>›</span><span>משתמשים</span></div>
+    ${pend.length?`<div class="banner warn">${pend.length} משתמשים ממתינים לאישור.</div>`:''}
+    <div class="card">
+      <div class="card-h"><h2>משתמשי המערכת</h2><span class="pnum">${state.users.length}</span></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>שם</th><th>אימייל</th><th>תפקיד</th><th>נרשם</th><th></th></tr></thead>
+        <tbody>${state.users.map(u=>`
+          <tr>
+            <td class="pname">${esc(u.full_name||'—')}${u.id===state.me.id?' <span class="tag other sm">אני</span>':''}</td>
+            <td style="color:var(--ink2)">${esc(u.email||'')}</td>
+            <td><span class="tag r-${u.role}">${ROLES[u.role]||u.role}</span></td>
+            <td class="pnum">${dmy(u.created_at)}</td>
+            <td class="act">
+              ${u.id===state.me.id?'<span class="pnum">—</span>':`
+                <select class="btn sm" data-role="${u.id}" style="padding:5px">
+                  ${Object.entries(ROLES).map(([k,t])=>`<option value="${k}" ${u.role===k?'selected':''}>${t}</option>`).join('')}
+                </select>
+                <button class="btn danger sm" data-deluser="${u.id}">הסרה</button>`}
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>
+    <div class="banner info" style="margin-top:16px">
+      <b>עריכה</b> — יצירה ושינוי של פרויקטים, גורמים, חשבונות ומסמכים.
+      <b>צפייה בלבד</b> — קריאה של הכול, בלי שינוי. מתאים למפקחים ולגורמים חיצוניים.
+    </div>`
+  document.getElementById('back').onclick=()=>{ state.view='list'; state.projectId=null; refresh() }
+  appEl().querySelectorAll('[data-role]').forEach(s=>s.onchange=async ()=>{
+    const { error } = await sb.from('profiles').update({role:s.value}).eq('id',s.dataset.role)
+    if(error) return toast(dbErr(error), true)
+    toast('התפקיד עודכן'); await refresh()
+  })
+  appEl().querySelectorAll('[data-deluser]').forEach(b=>b.onclick=async ()=>{
+    const u=state.users.find(x=>x.id===b.dataset.deluser)
+    if(!confirm(`להסיר את הגישה של ${u.email}?\nהחשבון עצמו יישאר, אך ללא הרשאות.`)) return
+    const { error } = await sb.from('profiles').update({role:'pending'}).eq('id',u.id)
+    if(error) return toast(dbErr(error), true)
+    toast('הגישה הוסרה'); await refresh()
+  })
+}
+
+/* ═══════════ רשימת פרויקטים ═══════════ */
+function viewList(){
+  const all=state.projects
+  const fs=state.filter
+  const ps=all.filter(p =>
+    (!fs.status  || p.status===fs.status) &&
+    (!fs.sector  || p.sector===fs.sector) &&
+    (!fs.kind    || p.project_kind===fs.kind) &&
+    (!fs.loc     || p.locality===fs.loc))
+
+  const DIMS={ sector:'תחום', locality:'יישוב', status:'שלב', project_kind:'סוג' }
+  const dim=fs.group||'sector'
+  const label=k=>{
+    if(dim==='sector')  return SECTOR[k] ? `<span class="tag ${SECTOR[k].c} sm">${SECTOR[k].t}</span>` : '<span class="pnum">ללא תחום</span>'
+    if(dim==='status')  return STATUS[k] ? `<span class="tag ${STATUS[k].c} sm">${STATUS[k].t}</span>` : '<span class="pnum">ללא שלב</span>'
+    if(dim==='project_kind') return KIND[k] ? `<span class="tag ${KIND[k].c} sm">${KIND[k].t}</span>` : '<span class="pnum">ללא סוג</span>'
+    return LOCALITY[k] ? `<span class="tag loc sm">${LOCALITY[k]}</span>` : '<span class="pnum">ללא יישוב</span>'
+  }
+  const roll={}
+  ps.forEach(p=>{
+    const k=p[dim]||'none'
+    roll[k]=roll[k]||{n:0,cost:0}
+    roll[k].n++; roll[k].cost+=(p._c?.planned||0)
+  })
+  const rollKeys=Object.keys(roll).sort()
+  const active = fs.status||fs.sector||fs.kind||fs.loc
+
+  const chip=(g,v,t)=>`<button class="fchip ${(fs[g]||'')===v?'on':''}" data-f="${g}" data-v="${v}">${t}</button>`
+
+  appEl().innerHTML = `
+    ${isAdmin() && state.pending ? `<div class="pend-banner">
+      <span>${state.pending===1?'משתמש חדש נרשם וממתין לאישור שלך.':`${state.pending} משתמשים חדשים נרשמו וממתינים לאישור שלך.`}</span>
+      <div class="spacer"></div>
+      <button class="btn sm" id="goUsers">מעבר לאישור</button>
+    </div>`:''}
+    <div class="card">
+      <div class="card-h">
+        <h2>פרויקטים</h2><span class="pnum">${ps.length}${ps.length!==all.length?` מתוך ${all.length}`:''}</span>
+        <div class="spacer"></div>
+        ${canEdit()?`<button class="btn primary" id="newProj">פרויקט חדש</button>`:''}
+      </div>
+
+      <div class="filters">
+        <span class="lbl">שלב</span>
+        ${chip('status','','הכול')}
+        ${Object.entries(STATUS).map(([k,s])=>chip('status',k,s.t)).join('')}
+      </div>
+      <div class="filters">
+        <span class="lbl">תחום</span>
+        ${chip('sector','','הכול')}
+        ${Object.entries(SECTOR).map(([k,s])=>chip('sector',k,s.t)).join('')}
+        <span class="fsep"></span>
+        <span class="lbl">סוג</span>
+        ${chip('kind','','הכול')}
+        ${Object.entries(KIND).map(([k,s])=>chip('kind',k,s.t)).join('')}
+        <span class="fsep"></span>
+        <span class="lbl">יישוב</span>
+        <select class="fsel" id="fLoc">
+          <option value="">כל היישובים</option>
+          ${Object.entries(LOCALITY).map(([k,t])=>`<option value="${k}" ${fs.loc===k?'selected':''}>${t}</option>`).join('')}
+        </select>
+        ${active?`<button class="fchip" id="clearAll" style="margin-right:auto">ניקוי הסינון</button>`:''}
+      </div>
+
+      ${ps.length===0 ? `<div class="empty"><p>${all.length?'אין פרויקטים התואמים לסינון.':'עדיין אין פרויקטים במערכת.'}</p>
+        ${all.length?`<button class="btn" id="clearF">ניקוי הסינון</button>`:(canEdit()?`<button class="btn primary" id="newProj2">הוספת הפרויקט הראשון</button>`:'')}</div>` : `
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>פרויקט</th><th>יישוב</th><th>תחום</th><th>שלב</th><th>עלות ביצוע</th><th>עלות מתוכננת</th><th>הוגש</th><th></th></tr></thead>
+          <tbody>${ps.map(p=>{
+            const c=p._c||{base:0,src:'estimate',planned:0,submitted:0,parties:0}
+            const st=STATUS[p.status]||STATUS.planning
+            const sec=SECTOR[p.sector], kd=KIND[p.project_kind]
+            const frame=Number(p.total_budget_with_tax||0)
+            const over=frame && c.planned>frame
+            return `<tr class="click" data-id="${p.id}">
+              <td><div class="pname">${esc(p.name)}</div><div class="pnum">${esc(p.project_number||'')} · ${c.parties} גורמים</div></td>
+              <td>${LOCALITY[p.locality]?`<span class="tag loc sm">${LOCALITY[p.locality]}</span>`:'<span class="pnum">—</span>'}</td>
+              <td style="white-space:nowrap">
+                ${sec?`<span class="tag ${sec.c} sm">${sec.t}</span>`:'<span class="pnum">—</span>'}
+                ${kd?`<span class="tag ${kd.c} sm" style="margin-right:4px">${kd.t}</span>`:''}
+              </td>
+              <td><span class="tag ${st.c}">${st.t}</span></td>
+              <td class="money num">${c.base?`${ils(c.base)}<div class="pnum" style="font-weight:400">${c.src==='estimate'?'אומדן':'חוזה קבלן'}</div>`:'<span style="color:var(--ink3);font-weight:400">טרם נקבע</span>'}</td>
+              <td class="money num" style="color:${over?'var(--danger)':'inherit'}">${c.planned?ils(c.planned):'—'}</td>
+              <td class="money num">${c.submitted?ils(c.submitted):'—'}</td>
+              <td class="act"><button class="btn sm">פתיחה</button></td>
+            </tr>`}).join('')}</tbody>
+        </table></div>
+        <div class="rollhead">
+          <span class="lbl">סיכום לפי</span>
+          <select class="fsel" id="grpSel">
+            ${Object.entries(DIMS).map(([k,t])=>`<option value="${k}" ${dim===k?'selected':''}>${t}</option>`).join('')}
+          </select>
+        </div>
+        <div class="rollup">
+          ${rollKeys.map(k=>`<div>
+            <div class="k">${label(k)} · ${roll[k].n} פרויקטים</div>
+            <div class="v">${ils(roll[k].cost)}</div>
+          </div>`).join('')}
+          <div style="background:var(--ink)"><div class="k" style="color:#93A6B3">סה״כ מוצג · ${ps.length}</div><div class="v" style="color:#fff">${ils(ps.reduce((s,p)=>s+(p._c?.planned||0),0))}</div></div>
+        </div>`}
+    </div>`
+
+  appEl().querySelectorAll('#newProj,#newProj2').forEach(b=>b.onclick=()=>projectModal())
+  const gu=document.getElementById('goUsers'); if(gu) gu.onclick=()=>{ state.view='users'; refresh() }
+  appEl().querySelectorAll('tr.click').forEach(tr=>tr.onclick=()=>go(Number(tr.dataset.id)))
+  appEl().querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{
+    state.filter={...fs,[b.dataset.f]:b.dataset.v}; viewList()
+  })
+  const fl=document.getElementById('fLoc'); if(fl) fl.onchange=()=>{ state.filter={...fs,loc:fl.value}; viewList() }
+  const gs=document.getElementById('grpSel'); if(gs) gs.onchange=()=>{ state.filter={...fs,group:gs.value}; viewList() }
+  const reset=()=>{ state.filter={status:'',sector:'',kind:'',loc:'',group:dim}; viewList() }
+  ;['clearAll','clearF'].forEach(id=>{ const b=document.getElementById(id); if(b) b.onclick=reset })
+}
+
+/* ═══════════ מסך פרויקט ═══════════ */
+function viewProject(){
+  const p=state.project, f=projectFinance()
+  const st=STATUS[p.status]||STATUS.planning
+  appEl().innerHTML = `
+    <div class="crumb"><button id="back">פרויקטים</button><span>›</span><span>${esc(p.name)}</span></div>
+    <div class="card">
+      <div class="card-h">
+        <div><h2>${esc(p.name)}</h2><div class="pnum">מס׳ ${esc(p.project_number||'—')} · סיום מתוכנן ${dmy(p.expected_end_date)}</div></div>
+        <div class="spacer"></div>
+        ${LOCALITY[p.locality]?`<span class="tag loc">${LOCALITY[p.locality]}</span>`:''}
+        ${SECTOR[p.sector]?`<span class="tag ${SECTOR[p.sector].c}">${SECTOR[p.sector].t}</span>`:''}
+        ${KIND[p.project_kind]?`<span class="tag ${KIND[p.project_kind].c}">${KIND[p.project_kind].t}</span>`:''}
+        <span class="tag ${st.c}">${st.t}</span>
+        ${canEdit()?`<button class="btn sm" id="editProj">עריכה</button>`:''}
+      </div>
+      <div class="card-b">${costStructure(f)}</div>
+    </div>
+
+    <div class="section-title">מקורות מימון</div>
+    <div class="card">
+      <div class="card-h">
+        <h3>${state.funding.length?`${state.funding.length} מקורות`:'טרם הוגדרו'}</h3>
+        <div class="spacer"></div>
+        ${canEdit()?`<button class="btn primary sm" id="addFund">הוספת מקור</button>`:''}
+      </div>
+      ${fundingBody(f)}
+    </div>
+
+    <div class="section-title">גורמים, חשבונות ומסמכים</div>
+    <div class="card">
+      <div class="card-h">
+        <h3>${state.parties.length} גורמים</h3>
+        <div class="spacer"></div>
+        ${canEdit()?`<button class="btn primary sm" id="addParty">הוספת גורם</button>`:''}
+      </div>
+      ${state.parties.length===0 ? `<div class="empty">
+        <p>אפשר להתחיל מהמתכנן. עד שייבחר קבלן, האחוזים נגזרים מאומדן עלות הביצוע של הפרויקט.</p>
+        ${canEdit()?`<button class="btn primary" id="addParty2">הוספת גורם ראשון</button>`:''}</div>`
+      : `<div class="card-b" style="display:flex;flex-direction:column;gap:16px">${state.parties.map(pt=>partyBlock(pt,f)).join('')}</div>`}
+    </div>`
+  document.getElementById('back').onclick=()=>go(null)
+  const e1=document.getElementById('editProj'); if(e1) e1.onclick=()=>projectModal(p)
+  const e2=document.getElementById('addFund'); if(e2) e2.onclick=()=>fundModal()
+  appEl().querySelectorAll('#addParty,#addParty2').forEach(b=>b.onclick=()=>partyModal())
+  bindRowActions()
+}
+
+function costStructure(f){
+  const bi=f.bi
+  if(!f.lines.length) return `<div class="banner info" style="margin:0">
+    התחל מהזנת <b>אומדן עלות הביצוע</b> בעריכת הפרויקט. כל יתר הגורמים ייגזרו ממנו באחוזים,
+    ובעת בחירת הקבלן הבסיס יתחלף אוטומטית לסכום הזכייה.</div>`
+  const max=Math.max(...f.lines.map(l=>l.value), 1)
+  const gap = bi.source==='contract' && bi.estimate ? bi.estimate-bi.value : null
+  return `
+    ${bi.source==='estimate'
+      ? `<div class="banner warn" style="margin:0 0 14px">שלב תכנון — הבסיס לחישוב הוא האומדן. עם בחירת הקבלן הזוכה הבסיס יתחלף לסכום הזכייה וכל האחוזים יתעדכנו.</div>`
+      : (gap!==null ? `<div class="cmp">
+          <div><span class="k">אומדן</span><b class="num">${ils(bi.estimate)}</b></div>
+          <div class="arw">←</div>
+          <div><span class="k">זכייה במכרז</span><b class="num">${ils(bi.value)}</b></div>
+          <div class="spacer"></div>
+          <div class="gapbox ${gap>=0?'good':'bad'}">
+            <span class="k">${gap>=0?'חיסכון מול האומדן':'חריגה מהאומדן'}</span>
+            <b class="num">${ils(Math.abs(gap))}</b>
+            <span class="num pctg">${bi.estimate?((Math.abs(gap)/bi.estimate)*100).toFixed(1)+'%':''}</span>
+          </div>
+        </div>` : '')}
+    <div class="cost">
+      ${f.lines.map(l=>`
+        <div class="cost-row ${l.isBase?'base':''} ${l.virtual?'virt':''}">
+          <div class="cost-lbl">${esc(l.name)}<small>${esc(l.role)}${l.isBase?' · בסיס':''}</small></div>
+          <div class="cost-bar"><i style="width:${(l.value/max)*100}%"></i></div>
+          <div class="cost-pct num">${l.pct?l.pct.toFixed(1)+'%':'—'}</div>
+          <div class="cost-val num">${ils(l.value)}</div>
+        </div>`).join('')}
+      <div class="cost-sum"><div class="l">סה״כ ללא מע״מ</div><div class="v num">${ils(f.net)}</div></div>
+      <div class="cost-sum"><div class="l" style="font-weight:400;color:var(--ink2)">מע״מ ${VAT*100}%</div><div class="v num" style="font-weight:600;color:var(--ink2)">${ils(f.vat)}</div></div>
+      <div class="cost-sum total"><div class="l">עלות הפרויקט כולל מע״מ</div><div class="v num">${ils(f.planned)}</div></div>
+    </div>
+    <div class="stats" style="margin-top:16px">
+      <div class="stat"><div class="k">${bi.source==='estimate'?'אומדן עלות ביצוע':'עלות ביצוע בחוזה'}</div><div class="v num">${ils(bi.value)}</div></div>
+      <div class="stat"><div class="k">הוגש עד כה</div><div class="v num">${ils(f.submitted)}</div></div>
+      <div class="stat"><div class="k">אושר</div><div class="v num dim">${ils(f.approved)}</div></div>
+      ${f.frame?`<div class="stat"><div class="k">מסגרת מאושרת</div><div class="v num dim">${ils(f.frame)}</div></div>
+      <div class="stat"><div class="k">${f.frameGap<0?'חריגה מהמסגרת':'יתרת מסגרת'}</div><div class="v num ${f.frameGap<0?'neg':'pos'}">${ils(Math.abs(f.frameGap))}</div></div>`:''}
+    </div>`
+}
+
+function fundingBody(f){
+  if(state.funding.length===0) return `<div class="empty" style="padding:26px 20px"><p style="margin:0">לא הוגדרו מקורות מימון. לפרויקט במימון עצמי מלא — מקור אחד בסכום עלות הפרויקט.</p></div>`
+  const gap=f.fundGap
+  return `
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>מקור</th><th>סוג</th><th>סכום</th><th>חלק מהעלות</th><th>הערות</th><th></th></tr></thead>
+      <tbody>${state.funding.map(s=>`
+        <tr>
+          <td class="pname">${esc(s.name||FUND[s.source_type]||'')}</td>
+          <td><span class="tag other sm">${FUND[s.source_type]||s.source_type}</span></td>
+          <td class="money num">${ils(s.amount)}</td>
+          <td class="num" style="color:var(--ink2)">${f.planned?((Number(s.amount||0)/f.planned)*100).toFixed(1)+'%':'—'}</td>
+          <td style="color:var(--ink2);font-size:13.5px">${esc(s.notes||'')}</td>
+          <td class="act">${canEdit()?`
+            <button class="btn ghost sm" data-editfund="${s.id}">עריכה</button>
+            <button class="btn danger sm" data-delfund="${s.id}">מחיקה</button>`:''}</td>
+        </tr>`).join('')}</tbody>
+    </table></div>
+    <div style="padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:20px;flex-wrap:wrap;font-size:13.5px;background:#F7FAFB">
+      <span style="color:var(--ink2)">סה״כ מימון <b class="num" style="color:var(--ink)">${ils(f.funded)}</b></span>
+      <span style="color:var(--ink2)">עלות הפרויקט <b class="num" style="color:var(--ink)">${ils(f.planned)}</b></span>
+      <span style="color:var(--ink2)">${gap<0?'חסר מימון':'עודף מימון'} <b class="num" style="color:${gap<0?'var(--danger)':'var(--ok)'}">${ils(Math.abs(gap))}</b></span>
+    </div>`
+}
+
+function partyBlock(pt, pf){
+  const f=partyFinance(pt)
+  const isBase = !!(pf.bi.party && pf.bi.party.id===pt.id)
+  const pct=pf.base?(f.contract/pf.base)*100:0
+  const docs=state.docs.filter(d=>d.contractor_id===pt.id)
+  const used=f.contract?Math.round((f.cumulative/f.contract)*100):0
+  const basis = pf.bi.source==='estimate' ? 'מהאומדן' : 'מהחוזה'
+  return `
+  <div style="border:1px solid var(--line);border-radius:9px;overflow:hidden">
+    <div style="padding:13px 15px;background:${isBase?'#F2F6F7':'#FAFCFC'};border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span class="tag ${pt.type}">${PARTY[pt.type]||pt.type}</span>
+      <div>
+        <div style="font-weight:700">${esc(pt.name)}${isBase?' <span class="tag other sm">בסיס · סכום זכייה</span>':''}</div>
+        ${pt.contact_info?`<div class="pnum">${esc(pt.contact_info)}</div>`:''}
+      </div>
+      <div style="flex:1"></div>
+      <div style="text-align:left">
+        <div class="pnum">${isBase?'סכום הזכייה':(Number(pt.pct_of_base??pt.percentage)?`${pct.toFixed(2)}% ${basis}`:'סכום קבוע')}</div>
+        <div class="num" style="font-weight:700">${ils2(f.contract)}</div>
+      </div>
+      ${canEdit()?`<button class="btn ghost sm" data-editparty="${pt.id}">עריכה</button>
+      <button class="btn danger sm" data-delparty="${pt.id}">מחיקה</button>`:''}
+    </div>
+
+    <div style="padding:11px 15px;display:flex;gap:20px;flex-wrap:wrap;font-size:13.5px;border-bottom:1px solid var(--line2)">
+      <span style="color:var(--ink2)">מצטבר שהוגש <b class="num" style="color:var(--ink)">${ils2(f.cumulative)}</b></span>
+      <span style="color:var(--ink2)">אושר <b class="num" style="color:var(--ink)">${ils2(f.approved)}</b></span>
+      <span style="color:var(--ink2)">עיכבון מוחזק <b class="num" style="color:var(--amber)">${ils2(f.held)}</b></span>
+      <span style="color:var(--ink2)">יתרת חוזה <b class="num" style="color:${f.remaining<0?'var(--danger)':'var(--ok)'}">${ils2(f.remaining)}</b></span>
+      <span style="color:var(--ink3)">(${used}%)</span>
+    </div>
+
+    <div style="padding:12px 15px;border-bottom:1px solid var(--line2)">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:${docs.length?'10px':'0'}">
+        <b style="font-size:13px;color:var(--ink2)">מסמכים</b><span class="pnum">${docs.length||''}</span>
+        <div style="flex:1"></div>
+        ${canEdit()?`<button class="btn sm" data-adddoc="${pt.id}">הוספת מסמך</button>`:''}
+      </div>
+      ${docs.length?`<div style="display:flex;flex-direction:column;gap:7px">${docs.map(d=>`
+        <div class="doc">
+          <span class="tag other sm">${DOCT[d.doc_type]||d.doc_type}</span>
+          <div><div class="dt">${esc(d.title)}</div>${d.doc_date?`<div class="dm">${dmy(d.doc_date)}</div>`:''}</div>
+          <div class="spacer"></div>
+          ${(d.url||d.storage_path)?`<button class="btn ghost sm" data-opendoc="${d.id}">פתיחה</button>`:'<span class="dm">ללא קובץ</span>'}
+          ${canEdit()?`<button class="btn danger sm" data-deldoc="${d.id}">מחיקה</button>`:''}
+        </div>`).join('')}</div>`:''}
+    </div>
+
+    ${f.rows.length===0?`
+      <div style="padding:14px 15px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <span style="color:var(--ink3);font-size:13.5px">טרם הוגשו חשבונות.</span>
+        ${canEdit()?`<button class="btn sm" data-addinv="${pt.id}">רישום חשבון</button>`:''}
+      </div>`
+    : `<div class="tbl-wrap"><table>
+        <thead><tr><th>חשבון</th><th>מצטבר ללא מע״מ</th><th>עיכבון</th><th>מצטבר נטו</th><th>חשבון נוכחי</th><th>מע״מ</th><th>לתשלום</th><th>הוגש</th><th>אושר</th><th></th></tr></thead>
+        <tbody>${f.rows.map(r=>`
+          <tr>
+            <td class="num" style="font-weight:700">${esc(r.invoice_number)}</td>
+            <td class="money num">${ils2(r._cum)}</td>
+            <td class="money num" style="color:var(--amber)">${r._hold?ils2(r._hold):'—'}</td>
+            <td class="money num">${ils2(r._net)}</td>
+            <td class="money num">${ils2(r._cur)}</td>
+            <td class="money num" style="color:var(--ink3)">${ils2(r._vat)}</td>
+            <td class="money num" style="color:var(--brand-dk)">${ils2(r._tot)}</td>
+            <td class="num" style="font-size:13px">${dmy(r.date_submitted)}</td>
+            <td class="money num">${r.approved_amount?ils2(r.approved_amount):'—'}</td>
+            <td class="act">${canEdit()?`<button class="btn ghost sm" data-editinv="${r.id}">עריכה</button><button class="btn danger sm" data-delinv="${r.id}">מחיקה</button>`:''}</td>
+          </tr>`).join('')}</tbody>
+      </table></div>
+      ${canEdit()?`<div style="padding:11px 15px;border-top:1px solid var(--line2)"><button class="btn sm" data-addinv="${pt.id}">רישום חשבון נוסף</button></div>`:''}`}
+  </div>`
+}
+
+function bindRowActions(){
+  const q=(sel,fn)=>appEl().querySelectorAll(sel).forEach(b=>b.onclick=()=>fn(b))
+  q('[data-editparty]', b=>partyModal(state.parties.find(x=>x.id===Number(b.dataset.editparty))))
+  q('[data-delparty]',  b=>delParty(Number(b.dataset.delparty)))
+  q('[data-addinv]',    b=>invoiceModal(state.parties.find(x=>x.id===Number(b.dataset.addinv))))
+  q('[data-editinv]',   b=>{ const i=state.invoices.find(x=>x.id===Number(b.dataset.editinv)); invoiceModal(state.parties.find(x=>x.id===i.contractor_id), i) })
+  q('[data-delinv]',    b=>delInvoice(Number(b.dataset.delinv)))
+  q('[data-editfund]',  b=>fundModal(state.funding.find(x=>x.id===Number(b.dataset.editfund))))
+  q('[data-delfund]',   b=>delFund(Number(b.dataset.delfund)))
+  q('[data-adddoc]',    b=>docModal(Number(b.dataset.adddoc)))
+  q('[data-deldoc]',    b=>delDoc(Number(b.dataset.deldoc)))
+  q('[data-opendoc]',   b=>openDoc(Number(b.dataset.opendoc), b))
+}
+
+async function openDoc(id, btn){
+  const d=state.docs.find(x=>x.id===id)
+  if(d.storage_path){
+    btn.disabled=true; btn.textContent='פותח…'
+    const { data, error } = await sb.storage.from(BUCKET).createSignedUrl(d.storage_path, 300)
+    btn.disabled=false; btn.textContent='פתיחה'
+    if(error) return toast(dbErr(error), true)
+    window.open(data.signedUrl,'_blank','noopener')
+  } else if(d.url){
+    window.open(d.url,'_blank','noopener')
+  }
+}
+
+/* ═══════════ חלונות ═══════════ */
+function modal(title, body, onMount){
+  const ov=document.createElement('div'); ov.className='ov'
+  ov.innerHTML=`<div class="modal"><div class="modal-h"><h3>${title}</h3><button class="btn ghost" data-x>✕</button></div><div class="modal-b">${body}</div></div>`
+  document.body.appendChild(ov)
+  const close=()=>ov.remove()
+  ov.querySelector('[data-x]').onclick=close
+  ov.onclick=e=>{ if(e.target===ov) close() }
+  onMount(ov, close)
+  const f=ov.querySelector('input,select'); if(f) f.focus()
+}
+
+function projectModal(p=null){
+  const v=p||{}
+  modal(p?'עריכת פרויקט':'פרויקט חדש', `
+    <div class="grid2">
+      <div class="field"><label>שם הפרויקט</label><input id="f_name" value="${esc(v.name||'')}"></div>
+      <div class="field"><label>מספר פרויקט</label><input id="f_num" value="${esc(v.project_number||'')}"></div>
+    </div>
+    <div class="grid3" style="margin-top:14px">
+      <div class="field"><label>יישוב</label><select id="f_loc">
+        <option value="">— לא צוין —</option>
+        ${Object.entries(LOCALITY).map(([k,t])=>`<option value="${k}" ${v.locality===k?'selected':''}>${t}</option>`).join('')}
+      </select></div>
+      <div class="field"><label>תחום</label><select id="f_sec">
+        <option value="">— לא צוין —</option>
+        ${Object.entries(SECTOR).map(([k,s])=>`<option value="${k}" ${v.sector===k?'selected':''}>${s.t}</option>`).join('')}
+      </select></div>
+      <div class="field"><label>סוג הפרויקט</label><select id="f_kind">
+        <option value="">— לא צוין —</option>
+        ${Object.entries(KIND).map(([k,s])=>`<option value="${k}" ${v.project_kind===k?'selected':''}>${s.t}</option>`).join('')}
+      </select></div>
+    </div>
+    <div class="grid2" style="margin-top:14px">
+      <div class="field"><label>סטטוס</label><select id="f_st">${Object.entries(STATUS).map(([k,s])=>`<option value="${k}" ${v.status===k?'selected':''}>${s.t}</option>`).join('')}</select></div>
+      <div class="field"><label>אומדן עלות ביצוע <span class="hint">ללא מע״מ</span></label><input id="f_est" type="number" step="0.01" value="${v.estimate??''}"></div>
+    </div>
+    <div class="banner info" style="margin:14px 0 0">האומדן משמש כבסיס לחישוב האחוזים של המתכנן, המפקח והניהול בשלב התכנון. לאחר בחירת הקבלן הזוכה הבסיס מתחלף לסכום הזכייה, והאחוזים מתעדכנים לפיו.</div>
+    <div class="grid2" style="margin-top:14px">
+      <div class="field"><label>מסגרת תקציבית מאושרת <span class="hint">אופציונלי · כולל מע״מ</span></label><input id="f_bud" type="number" step="0.01" value="${v.total_budget_with_tax??''}"></div>
+      <div class="field"><label>תחילת ביצוע</label><input id="f_sd" type="date" value="${v.start_date||''}"></div>
+    </div>
+    <div class="grid2" style="margin-top:14px">
+      <div class="field"><label>סיום מתוכנן</label><input id="f_ed" type="date" value="${v.expected_end_date||''}"></div>
+      <div class="field"></div>
+    </div>
+    <div class="form-actions"><button class="btn primary" id="save">שמירה</button><button class="btn" data-c>ביטול</button></div>`,
+  (ov,close)=>{
+    ov.querySelector('[data-c]').onclick=close
+    ov.querySelector('#save').onclick=async e=>{
+      const name=ov.querySelector('#f_name').value.trim(), pn=ov.querySelector('#f_num').value.trim()
+      if(!name||!pn) return toast('נדרשים שם פרויקט ומספר פרויקט', true)
+      const rec={ name, project_number:pn, status:ov.querySelector('#f_st').value,
+        sector: ov.querySelector('#f_sec').value || null,
+        project_kind: ov.querySelector('#f_kind').value || null,
+        locality: ov.querySelector('#f_loc').value || null,
+        estimate:num(ov.querySelector('#f_est').value),
+        total_budget_with_tax:num(ov.querySelector('#f_bud').value),
+        start_date:ov.querySelector('#f_sd').value||null,
+        expected_end_date:ov.querySelector('#f_ed').value||null }
+      e.target.disabled=true; e.target.textContent='שומר…'
+      try{
+        if(p){ const {error}=await sb.from('projects').update(rec).eq('id',p.id); if(error) throw error }
+        else { const {error}=await sb.from('projects').insert([{...rec, status:rec.status||'investment'}]); if(error) throw error }
+        close(); toast(p?'הפרויקט עודכן':'הפרויקט נוצר'); await refresh()
+      }catch(err){ e.target.disabled=false; e.target.textContent='שמירה'; toast(dbErr(err),true) }
+    }
+  })
+}
+
+function partyModal(pt=null){
+  const v=pt||{}
+  const bi=baseInfo(state.parties, state.project)
+  const base=bi.value
+  const hasBase=state.parties.some(x=>(x.is_base||x.type==='contractor') && x.id!==v.id && Number(x.contract_value||0))
+  const isBase = pt ? !!v.is_base : false
+  const mode = isBase?'base':(Number(v.pct_of_base ?? v.percentage)?'pct':(pt?'fixed':'pct'))
+  modal(pt?'עריכת גורם':'הוספת גורם', `
+    <div class="grid2">
+      <div class="field"><label>תפקיד</label><select id="g_type">${Object.entries(PARTY).map(([k,t])=>`<option value="${k}" ${(v.type||(hasBase?'inspector':'designer'))===k?'selected':''}>${t}</option>`).join('')}</select></div>
+      <div class="field"><label>שם</label><input id="g_name" value="${esc(v.name||'')}"></div>
+    </div>
+    <div class="field" style="margin-top:14px"><label>איש קשר / טלפון</label><input id="g_contact" value="${esc(v.contact_info||'')}"></div>
+    <div class="field" style="margin-top:16px">
+      <label>אופן קביעת ערך החוזה</label>
+      <div class="radio-row" id="modes">
+        <label data-m="base"><input type="radio" name="mode" value="base" ${mode==='base'?'checked':''} ${hasBase&&!isBase?'disabled':''}>קבלן זוכה · סכום הזכייה</label>
+        <label data-m="pct"><input type="radio" name="mode" value="pct" ${mode==='pct'?'checked':''}>אחוז מעלות הביצוע</label>
+        <label data-m="fixed"><input type="radio" name="mode" value="fixed" ${mode==='fixed'?'checked':''}>סכום קבוע</label>
+      </div>
+    </div>
+    <div class="grid2" style="margin-top:14px">
+      <div class="field" id="wrapPct"><label>אחוז מעלות הביצוע</label><input id="g_pct" type="number" step="0.01" value="${v.pct_of_base ?? v.percentage ?? ''}" placeholder="לדוגמה 3"></div>
+      <div class="field"><label>ערך חוזה ללא מע״מ</label><input id="g_val" type="number" step="0.01" value="${v.contract_value??''}"></div>
+    </div>
+    <div class="banner info" id="baseNote" style="margin:14px 0 0"></div>
+    <div class="form-actions"><button class="btn primary" id="save">שמירה</button><button class="btn" data-c>ביטול</button></div>`,
+  (ov,close)=>{
+    ov.querySelector('[data-c]').onclick=close
+    const pct=ov.querySelector('#g_pct'), val=ov.querySelector('#g_val')
+    const wrapPct=ov.querySelector('#wrapPct'), note=ov.querySelector('#baseNote')
+    const getMode=()=>ov.querySelector('input[name=mode]:checked').value
+    const srcTxt = bi.source==='estimate' ? 'אומדן' : 'סכום הזכייה'
+    const sync=()=>{
+      const m=getMode()
+      ov.querySelectorAll('#modes label').forEach(l=>l.classList.toggle('on', l.dataset.m===m))
+      wrapPct.style.display = m==='pct'?'':'none'
+      val.disabled = (m==='pct')
+      if(m==='pct'){
+        const n=num(pct.value)
+        val.value=(n!==null&&base)?(base*n/100).toFixed(2):''
+        note.innerHTML = base
+          ? `${n||0}% מתוך ${srcTxt} ${ils(base)}.${bi.source==='estimate'?' הסכום יתעדכן אוטומטית עם בחירת הקבלן הזוכה.':''}`
+          : 'אין עדיין בסיס לחישוב. יש להזין <b>אומדן עלות ביצוע</b> בעריכת הפרויקט, או להגדיר קבלן זוכה.'
+      } else if(m==='base'){
+        note.innerHTML='הסכום שיוזן כאן הוא סכום הזכייה במכרז. מרגע שמירתו הוא מחליף את האומדן כבסיס, וכל האחוזים בפרויקט יחושבו מחדש לפיו.'
+      } else { note.textContent='סכום קבוע שאינו תלוי בעלות הביצוע.' }
+    }
+    ov.querySelectorAll('input[name=mode]').forEach(r=>r.onchange=sync)
+    pct.oninput=sync; sync()
+    ov.querySelector('#save').onclick=async e=>{
+      const name=ov.querySelector('#g_name').value.trim()
+      if(!name) return toast('נדרש שם הגורם', true)
+      const m=getMode()
+      if(m==='pct'&&!base) return toast('יש להזין תחילה אומדן עלות ביצוע בעריכת הפרויקט', true)
+      const pv = m==='pct'?num(pct.value):null
+      const rec={ project_id:state.project.id, type:ov.querySelector('#g_type').value, name,
+        contact_info:ov.querySelector('#g_contact').value.trim()||null,
+        is_base:m==='base', pct_of_base:pv, percentage:pv,
+        percentage_or_fixed: m==='pct'?'percentage':'fixed',
+        contract_value: m==='pct'?base*(pv||0)/100:num(val.value) }
+      e.target.disabled=true; e.target.textContent='שומר…'
+      try{
+        if(pt){ const {error}=await sb.from('contractors').update(rec).eq('id',pt.id); if(error) throw error }
+        else  { const {error}=await sb.from('contractors').insert([rec]); if(error) throw error }
+        close()
+        toast(m==='base' ? 'הקבלן הזוכה נקבע — האחוזים חושבו מחדש' : (pt?'הגורם עודכן':'הגורם נוסף'))
+        await refresh()
+      }catch(err){ e.target.disabled=false; e.target.textContent='שמירה'; toast(dbErr(err),true) }
+    }
+  })
+}
+
+function fundModal(s=null){
+  const v=s||{}, f=projectFinance()
+  modal(s?'עריכת מקור מימון':'הוספת מקור מימון', `
+    <div class="grid2">
+      <div class="field"><label>סוג</label><select id="s_type">${Object.entries(FUND).map(([k,t])=>`<option value="${k}" ${v.source_type===k?'selected':''}>${t}</option>`).join('')}</select></div>
+      <div class="field"><label>שם המקור <span class="hint">גוף, קרן או שותף</span></label><input id="s_name" value="${esc(v.name||'')}" placeholder="לדוגמה: רשות המים"></div>
+    </div>
+    <div class="grid2" style="margin-top:14px">
+      <div class="field"><label>סכום</label><input id="s_amt" type="number" step="0.01" value="${v.amount??''}"></div>
+      <div class="field"><label>אחוז מעלות הפרויקט <span class="hint">ממלא את הסכום</span></label><input id="s_pct" type="number" step="0.01"></div>
+    </div>
+    <div class="field" style="margin-top:14px"><label>הערות</label><input id="s_notes" value="${esc(v.notes||'')}"></div>
+    <div class="banner info" style="margin:14px 0 0">עלות הפרויקט: ${ils(f.planned)}</div>
+    <div class="form-actions"><button class="btn primary" id="save">שמירה</button><button class="btn" data-c>ביטול</button></div>`,
+  (ov,close)=>{
+    ov.querySelector('[data-c]').onclick=close
+    const pct=ov.querySelector('#s_pct'), amt=ov.querySelector('#s_amt')
+    pct.oninput=()=>{ const n=num(pct.value); if(n!==null&&f.planned) amt.value=(f.planned*n/100).toFixed(2) }
+    ov.querySelector('#save').onclick=async e=>{
+      const rec={ project_id:state.project.id, source_type:ov.querySelector('#s_type').value,
+        name:ov.querySelector('#s_name').value.trim()||null, amount:num(amt.value),
+        notes:ov.querySelector('#s_notes').value.trim()||null }
+      if(rec.amount===null) return toast('נדרש סכום', true)
+      e.target.disabled=true; e.target.textContent='שומר…'
+      try{
+        if(s){ const {error}=await sb.from('funding_sources').update(rec).eq('id',s.id); if(error) throw error }
+        else { const {error}=await sb.from('funding_sources').insert([rec]); if(error) throw error }
+        close(); toast('מקור המימון נשמר'); await refresh()
+      }catch(err){ e.target.disabled=false; e.target.textContent='שמירה'; toast(dbErr(err),true) }
+    }
+  })
+}
+
+function docModal(partyId){
+  const pt=state.parties.find(x=>x.id===partyId)
+  modal(`הוספת מסמך · ${esc(pt.name)}`, `
+    <div class="grid2">
+      <div class="field"><label>סוג המסמך</label><select id="d_type">${Object.entries(DOCT).map(([k,t])=>`<option value="${k}">${t}</option>`).join('')}</select></div>
+      <div class="field"><label>תאריך המסמך</label><input id="d_date" type="date"></div>
+    </div>
+    <div class="field" style="margin-top:14px"><label>כותרת</label><input id="d_title" placeholder="לדוגמה: חוזה ביצוע מכרז 4/2026"></div>
+    <div class="field" style="margin-top:16px"><label>העלאת קובץ <span class="hint">PDF, Word, תמונה</span></label><input id="d_file" type="file"></div>
+    <div class="field" style="margin-top:14px"><label>או קישור למסמך <span class="hint">למשל ב-OneDrive של התאגיד</span></label><input id="d_url" placeholder="https://..."></div>
+    <div class="field" style="margin-top:14px"><label>הערות</label><input id="d_notes"></div>
+    <div class="form-actions"><button class="btn primary" id="save">שמירה</button><button class="btn" data-c>ביטול</button></div>`,
+  (ov,close)=>{
+    ov.querySelector('[data-c]').onclick=close
+    ov.querySelector('#save').onclick=async e=>{
+      const title=ov.querySelector('#d_title').value.trim()
+      if(!title) return toast('נדרשת כותרת למסמך', true)
+      const file=ov.querySelector('#d_file').files[0]
+      let url=ov.querySelector('#d_url').value.trim()||null, path=null
+      e.target.disabled=true; e.target.textContent=file?'מעלה קובץ…':'שומר…'
+      try{
+        if(file){
+          const ext=(file.name.split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'')
+          path=`${state.project.id}/${partyId}/${Date.now()}.${ext||'bin'}`
+          const { error:upErr }=await sb.storage.from(BUCKET).upload(path,file)
+          if(upErr) throw upErr
+          url=null
+        }
+        const rec={ project_id:state.project.id, contractor_id:partyId,
+          doc_type:ov.querySelector('#d_type').value, title, url, storage_path:path,
+          doc_date:ov.querySelector('#d_date').value||null,
+          notes:ov.querySelector('#d_notes').value.trim()||null }
+        const { error }=await sb.from('documents').insert([rec]); if(error) throw error
+        close(); toast('המסמך נשמר'); await refresh()
+      }catch(err){ e.target.disabled=false; e.target.textContent='שמירה'; toast(dbErr(err),true) }
+    }
+  })
+}
+
+function invoiceModal(pt, inv=null){
+  const f=partyFinance(pt)
+  const prev=f.rows.filter(r=>!inv||Number(r.invoice_number)<Number(inv.invoice_number))
+  const prevNet=prev.length?prev[prev.length-1]._net:0
+  const nextNum=inv?inv.invoice_number:String(f.rows.length+1)
+  const v=inv||{}
+  modal(inv?`עריכת חשבון ${esc(v.invoice_number)} · ${esc(pt.name)}`:`רישום חשבון · ${esc(pt.name)}`, `
+    <div class="banner info">חשבונות נרשמים <b>מצטבר</b>. החשבון הנוכחי לתשלום מחושב כהפרש מהחשבון הקודם.</div>
+    <div class="grid3">
+      <div class="field"><label>מס׳ חשבון חלקי</label><input id="i_num" value="${esc(nextNum)}"></div>
+      <div class="field"><label>מצטבר ללא מע״מ</label><input id="i_cum" type="number" step="0.01" value="${v.amount_without_tax??''}"></div>
+      <div class="field"><label>עיכבון %</label><input id="i_hp" type="number" step="0.01" value="${v.retention&&v.amount_without_tax?((v.retention/v.amount_without_tax)*100).toFixed(2):(HOLD*100)}"></div>
+    </div>
+    <div class="grid2" style="margin-top:14px">
+      <div class="field"><label>תאריך הגשה</label><input id="i_ds" type="date" value="${v.date_submitted||''}"></div>
+      <div class="field"><label>אושר <span class="hint">מצטבר, ללא מע״מ</span></label><input id="i_app" type="number" step="0.01" value="${v.approved_amount??''}"></div>
+    </div>
+    <div class="stats" style="margin-top:18px" id="pv"></div>
+    <div class="form-actions"><button class="btn primary" id="save">שמירה</button><button class="btn" data-c>ביטול</button></div>`,
+  (ov,close)=>{
+    ov.querySelector('[data-c]').onclick=close
+    const cum=ov.querySelector('#i_cum'), hp=ov.querySelector('#i_hp'), pv=ov.querySelector('#pv')
+    const draw=()=>{
+      const c=num(cum.value)||0, h=(num(hp.value)||0)/100
+      const hold=c*h, net=c-hold, cur=net-prevNet
+      pv.innerHTML=`
+        <div class="stat"><div class="k">עיכבון</div><div class="v num" style="font-size:16px;color:var(--amber)">${ils2(hold)}</div></div>
+        <div class="stat"><div class="k">מצטבר נטו</div><div class="v num" style="font-size:16px">${ils2(net)}</div></div>
+        <div class="stat"><div class="k">חשבון נוכחי</div><div class="v num" style="font-size:16px">${ils2(cur)}</div></div>
+        <div class="stat"><div class="k">מע״מ</div><div class="v num dim" style="font-size:16px">${ils2(cur*VAT)}</div></div>
+        <div class="stat"><div class="k">לתשלום</div><div class="v num" style="font-size:16px;color:var(--brand-dk)">${ils2(cur*(1+VAT))}</div></div>
+        ${(f.contract&&c>f.contract)?`<div class="stat"><div class="k">שים לב</div><div class="v neg" style="font-size:14px">חריגה מערך החוזה</div></div>`:''}
+        ${cur<0?`<div class="stat"><div class="k">שים לב</div><div class="v neg" style="font-size:14px">נמוך מהחשבון הקודם</div></div>`:''}`
+    }
+    cum.oninput=draw; hp.oninput=draw; draw()
+    ov.querySelector('#save').onclick=async e=>{
+      const c=num(cum.value); if(c===null) return toast('נדרש סכום מצטבר', true)
+      const h=(num(hp.value)||0)/100, hold=c*h, net=c-hold, cur=net-prevNet
+      const rec={ contractor_id:pt.id, invoice_number:ov.querySelector('#i_num').value.trim()||'1',
+        amount_without_tax:c, retention:hold, tax_amount:cur*VAT, total_with_tax:cur*(1+VAT),
+        approved_amount:num(ov.querySelector('#i_app').value),
+        date_submitted:ov.querySelector('#i_ds').value||null,
+        status:num(ov.querySelector('#i_app').value)!==null?'approved':'pending' }
+      e.target.disabled=true; e.target.textContent='שומר…'
+      try{
+        if(inv){ const {error}=await sb.from('invoices').update(rec).eq('id',inv.id); if(error) throw error }
+        else   { const {error}=await sb.from('invoices').insert([rec]); if(error) throw error }
+        close(); toast(inv?'החשבון עודכן':'החשבון נרשם'); await refresh()
+      }catch(err){ e.target.disabled=false; e.target.textContent='שמירה'; toast(dbErr(err),true) }
+    }
+  })
+}
+
+/* ═══════════ מחיקות ═══════════ */
+async function delParty(id){
+  const pt=state.parties.find(x=>x.id===id)
+  const bi=baseInfo(state.parties, state.project)
+  const isBase = !!(bi.party && bi.party.id===id)
+  const n=state.invoices.filter(i=>i.contractor_id===id).length
+  const dep=isBase?state.parties.filter(x=>x.id!==id&&Number(x.pct_of_base??x.percentage)).length:0
+  let msg=`למחוק את ${pt.name}?`
+  if(n) msg+=`\nיימחקו גם ${n} חשבונות.`
+  if(dep) msg+=`\nזהו הקבלן הזוכה — הבסיס יחזור לאומדן ו-${dep} גורמים יחושבו מחדש לפיו.`
+  if(!confirm(msg)) return
+  const {error}=await sb.from('contractors').delete().eq('id',id)
+  if(error) return toast(dbErr(error),true)
+  toast('הגורם נמחק'); await refresh()
+}
+async function delInvoice(id){
+  if(!confirm('למחוק את החשבון?')) return
+  const {error}=await sb.from('invoices').delete().eq('id',id)
+  if(error) return toast(dbErr(error),true)
+  toast('החשבון נמחק'); await refresh()
+}
+async function delFund(id){
+  if(!confirm('למחוק את מקור המימון?')) return
+  const {error}=await sb.from('funding_sources').delete().eq('id',id)
+  if(error) return toast(dbErr(error),true)
+  toast('מקור המימון נמחק'); await refresh()
+}
+async function delDoc(id){
+  const d=state.docs.find(x=>x.id===id)
+  if(!confirm(`למחוק את "${d.title}"?`)) return
+  if(d.storage_path) await sb.storage.from(BUCKET).remove([d.storage_path])
+  const {error}=await sb.from('documents').delete().eq('id',id)
+  if(error) return toast(dbErr(error),true)
+  toast('המסמך נמחק'); await refresh()
+}
+
+function dbErr(err){
+  const m=err?.message||String(err)
+  if(/row-level security|permission denied/i.test(m)) return 'אין לך הרשאה לפעולה הזו.'
+  if(/JWT|token|session/i.test(m))    return 'ההתחברות פגה. יש להיכנס מחדש.'
+  if(/does not exist|schema cache|Could not find the table/i.test(m)) return 'הטבלה חסרה במסד הנתונים.'
+  if(/Bucket not found/i.test(m))     return 'מאגר הקבצים project-docs לא קיים.'
+  if(/duplicate key/i.test(m))        return 'מספר הפרויקט כבר קיים במערכת.'
+  if(/invalid input syntax/i.test(m)) return 'אחד מהשדות המספריים אינו תקין.'
+  if(/Failed to fetch/i.test(m))      return 'אין חיבור לשרת. יש לבדוק את חיבור האינטרנט.'
+  return m
+}
+
+/* ═══════════ ניתוב ═══════════ */
+async function go(id){ state.projectId=id; state.view=id?'project':'list'; appEl().innerHTML=`<div class="empty"><span class="spin"></span></div>`; await refresh() }
+
+async function refresh(){
+  try{
+    if(state.view==='users'){ await loadUsers(); shell(); viewUsers() }
+    else if(state.projectId){ await Promise.all([loadProject(state.projectId), loadPending()]); shell(); viewProject() }
+    else { await Promise.all([loadProjects(), loadPending()]); shell(); viewList() }
+    setConn('ok','מחובר')
+  }catch(err){
+    setConn('bad','שגיאה')
+    appEl().innerHTML=`<div class="banner err">${esc(dbErr(err))}</div>
+      <div class="card"><div class="empty"><p>לא ניתן לטעון נתונים.</p>
+      <button class="btn primary" onclick="location.reload()">ניסיון חוזר</button></div></div>`
+  }
+}
+
+let recovering = /type=recovery/.test(location.hash)
+
+async function boot(){
+  if(recovering) return renderNewPassword()
+  const { data:{ session } } = await sb.auth.getSession()
+  if(!session) return renderGate('in')
+  const { data, error } = await sb.from('profiles').select('*').eq('id',session.user.id).single()
+  if(error || !data){
+    // הפרופיל עדיין לא נוצר — המתנה קצרה וניסיון נוסף
+    await new Promise(r=>setTimeout(r,900))
+    const retry = await sb.from('profiles').select('*').eq('id',session.user.id).single()
+    if(retry.error || !retry.data){ state.me={ id:session.user.id, email:session.user.email, role:'pending' }; return renderPending() }
+    state.me = retry.data
+  } else state.me = data
+  if(state.me.role==='pending') return renderPending()
+  shell(); await refresh()
+}
+
+sb.auth.onAuthStateChange((ev)=>{
+  if(ev==='SIGNED_OUT') location.reload()
+  if(ev==='PASSWORD_RECOVERY'){ recovering=true; renderNewPassword() }
+})
+boot()
+setTimeout(()=>{ if(recovering && !document.querySelector('#n_go')) renderNewPassword() }, 1200)
+</script>
+</body>
 </html>
