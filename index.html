@@ -109,6 +109,11 @@ a{color:var(--brand)}
 .disc .sub{background:#FAFCFC}
 .disc .tot{background:var(--ink)} .disc .tot span{color:#93A6B3} .disc .tot b{color:#fff; font-size:15px}
 .disc .eff{background:var(--brand-soft)} .disc .eff span,.disc .eff b{color:var(--brand-dk)}
+.pick{display:flex; align-items:center; gap:10px; padding:10px 13px; border:1px solid var(--line);
+  border-radius:8px; cursor:pointer; background:var(--surface); transition:.15s}
+.pick:hover{border-color:var(--ink3)}
+.pick:has(input:checked){border-color:var(--brand); background:var(--brand-soft)}
+.pick input{margin:0; width:16px; height:16px}
 .dchain{font-size:12.5px; color:var(--ink2); display:flex; gap:7px; flex-wrap:wrap; align-items:center;
   padding:9px 15px; background:#FDFAF5; border-bottom:1px solid var(--line2)}
 .dchain b{color:var(--ink); font-variant-numeric:tabular-nums}
@@ -274,6 +279,7 @@ function toast(msg, isErr=false){
 
 let state = { me:null, view:'list', projectId:null, projects:[], project:null,
               parties:[], invoices:[], funding:[], docs:[], users:[], pending:0,
+              groups:[], siblings:[],
               filter:{ status:'', sector:'', kind:'', loc:'', group:'sector' } }
 
 const canEdit = ()=> ['admin','editor'].includes(state.me?.role)
@@ -521,6 +527,7 @@ async function loadProject(id){
   state.invoices=(r1.data||[]).sort((a,b)=>(a.contractor_id-b.contractor_id)||(Number(a.invoice_number)-Number(b.invoice_number)))
   state.funding=r2.data||[]
   state.docs=r3.data||[]
+  await Promise.all([loadGroups(), loadSiblings(p)])
 
   if(canEdit() && state.funding.length===0){
     const legacy=[]
@@ -528,6 +535,32 @@ async function loadProject(id){
     if(Number(p.loan))  legacy.push({project_id:id,source_type:'loan', name:'הלוואה',amount:Number(p.loan)})
     if(legacy.length){ const {data}=await sb.from('funding_sources').insert(legacy).select(); state.funding=data||[] }
   }
+}
+
+async function loadGroups(){
+  const { data, error } = await sb.from('project_groups').select('*').order('name')
+  state.groups = error ? [] : (data||[])
+}
+
+// פרויקטים אחרים באותו מקבץ, כולל עלותם המתוכננת
+async function loadSiblings(p){
+  state.siblings=[]
+  if(!p.group_id) return
+  const { data:sib } = await sb.from('projects').select('*').eq('group_id',p.group_id).neq('id',p.id)
+  if(!sib || !sib.length) return
+  const ids=sib.map(x=>x.id)
+  const { data:pa } = await sb.from('contractors').select('*').in('project_id',ids)
+  const byProject={}
+  ;(pa||[]).forEach(x=>(byProject[x.project_id]=byProject[x.project_id]||[]).push(x))
+  sib.forEach(s=>{
+    const list=byProject[s.id]||[]
+    const bi=baseInfo(list,s)
+    let planned = bi.source==='estimate' ? bi.value : 0
+    list.forEach(pt=>planned+=effContract(pt,bi.value))
+    s._c={ base:bi.value, src:bi.source, planned:planned*(1+VAT), parties:list.length }
+    s._parties=list
+  })
+  state.siblings=sib
 }
 
 async function loadUsers(){
@@ -791,6 +824,8 @@ function viewProject(){
       <div class="card-b">${costStructure(f)}</div>
     </div>
 
+    ${siblingsStrip(f)}
+
     <div class="section-title">מקורות מימון</div>
     <div class="card">
       <div class="card-h">
@@ -806,6 +841,7 @@ function viewProject(){
       <div class="card-h">
         <h3>${state.parties.length} גורמים</h3>
         <div class="spacer"></div>
+        ${canEdit()&&state.siblings.some(s=>s._parties?.length)?`<button class="btn sm" id="copyParties">העתקה מפרויקט מקושר</button>`:''}
         ${canEdit()?`<button class="btn primary sm" id="addParty">הוספת גורם</button>`:''}
       </div>
       ${state.parties.length===0 ? `<div class="empty">
@@ -817,7 +853,95 @@ function viewProject(){
   const e1=document.getElementById('editProj'); if(e1) e1.onclick=()=>projectModal(p)
   const e2=document.getElementById('addFund'); if(e2) e2.onclick=()=>fundModal()
   appEl().querySelectorAll('#addParty,#addParty2').forEach(b=>b.onclick=()=>partyModal())
+  appEl().querySelectorAll('[data-sib]').forEach(tr=>tr.onclick=()=>go(Number(tr.dataset.sib)))
+  const cp=document.getElementById('copyParties'); if(cp) cp.onclick=copyPartiesModal
   bindRowActions()
+}
+
+// העתקת מתכנן, מפקח וכד' מפרויקט מקושר. הקבלן הזוכה לא מועתק — סכומו שונה בכל פרויקט.
+function copyPartiesModal(){
+  const bi=baseInfo(state.parties, state.project)
+  const rows=[]
+  state.siblings.forEach(s=>{
+    const sBase = baseInfo(s._parties||[], s).party
+    ;(s._parties||[]).forEach(pt=>{
+      if(sBase && sBase.id===pt.id) return
+      rows.push({ ...pt, _from:s.name })
+    })
+  })
+  if(!rows.length) return toast('אין גורמים להעתקה', true)
+
+  modal('העתקת גורמים מפרויקט מקושר', `
+    <div class="banner info">הקבלן הזוכה אינו מועתק — סכום הזכייה שונה בכל פרויקט. גורם המוגדר באחוזים יחושב מחדש לפי הבסיס של הפרויקט הזה.</div>
+    <div style="display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto">
+      ${rows.map((r,i)=>{
+        const p=Number(r.pct_of_base??r.percentage??0)
+        const preview = p ? (bi.value ? ils(bi.value*p/100) : 'ידרוש בסיס') : ils(r.contract_value)
+        return `<label class="pick">
+          <input type="checkbox" data-i="${i}" checked>
+          <span class="tag ${r.type} sm">${PARTY[r.type]||r.type}</span>
+          <div style="flex:1">
+            <div style="font-weight:700">${esc(r.name)}</div>
+            <div class="pnum">מתוך ${esc(r._from)}${r.contact_info?` · ${esc(r.contact_info)}`:''}</div>
+          </div>
+          <div style="text-align:left">
+            <div class="pnum">${p?`${p}% מהביצוע`:'סכום קבוע'}</div>
+            <div class="num" style="font-weight:700">${preview}</div>
+          </div>
+        </label>`}).join('')}
+    </div>
+    <div class="form-actions"><button class="btn primary" id="save">העתקה</button><button class="btn" data-c>ביטול</button></div>`,
+  (ov,close)=>{
+    ov.querySelector('[data-c]').onclick=close
+    ov.querySelector('#save').onclick=async e=>{
+      const picked=[...ov.querySelectorAll('input[data-i]:checked')].map(c=>rows[Number(c.dataset.i)])
+      if(!picked.length) return toast('לא נבחר אף גורם', true)
+      e.target.disabled=true; e.target.textContent='מעתיק…'
+      try{
+        const recs=picked.map(r=>{
+          const p=Number(r.pct_of_base??r.percentage??0)||null
+          return { project_id:state.project.id, type:r.type, name:r.name,
+                   contact_info:r.contact_info||null, is_base:false,
+                   pct_of_base:p, percentage:p,
+                   percentage_or_fixed: p?'percentage':'fixed',
+                   contract_value: p ? bi.value*p/100 : Number(r.contract_value||0) }
+        })
+        const { error }=await sb.from('contractors').insert(recs); if(error) throw error
+        close(); toast(`${recs.length} גורמים הועתקו`); await refresh()
+      }catch(err){ e.target.disabled=false; e.target.textContent='העתקה'; toast(dbErr(err),true) }
+    }
+  })
+}
+
+function siblingsStrip(f){
+  const g = state.groups.find(x=>x.id===state.project.group_id)
+  if(!g) return ''
+  const sibs=state.siblings
+  const total = f.planned + sibs.reduce((s,x)=>s+(x._c?.planned||0),0)
+  return `
+    <div class="section-title">מקבץ: ${esc(g.name)}</div>
+    <div class="card">
+      ${sibs.length===0 ? `<div class="empty" style="padding:22px"><p style="margin:0">זהו הפרויקט היחיד במקבץ כרגע.</p></div>` : `
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>פרויקט מקושר</th><th>יישוב</th><th>תחום</th><th>שלב</th><th>עלות מתוכננת</th><th></th></tr></thead>
+        <tbody>${sibs.map(s=>{
+          const st=STATUS[s.status]||STATUS.planning, sec=SECTOR[s.sector]
+          return `<tr class="click" data-sib="${s.id}">
+            <td><div class="pname">${esc(s.name)}</div><div class="pnum">${esc(s.project_number||'')} · ${s._c.parties} גורמים</div></td>
+            <td>${LOCALITY[s.locality]?`<span class="tag loc sm">${LOCALITY[s.locality]}</span>`:'<span class="pnum">—</span>'}</td>
+            <td>${sec?`<span class="tag ${sec.c} sm">${sec.t}</span>`:'<span class="pnum">—</span>'}</td>
+            <td><span class="tag ${st.c}">${st.t}</span></td>
+            <td class="money num">${s._c.planned?ils(s._c.planned):'—'}</td>
+            <td class="act"><button class="btn sm">מעבר</button></td>
+          </tr>`}).join('')}
+        </tbody>
+      </table></div>
+      <div style="padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:20px;flex-wrap:wrap;font-size:13.5px;background:#F7FAFB">
+        <span style="color:var(--ink2)">פרויקט זה <b class="num" style="color:var(--ink)">${ils(f.planned)}</b></span>
+        <span style="color:var(--ink2)">${sibs.length} מקושרים <b class="num" style="color:var(--ink)">${ils(total-f.planned)}</b></span>
+        <span style="color:var(--ink2)">סה״כ המקבץ <b class="num" style="color:var(--brand-dk)">${ils(total)}</b></span>
+      </div>`}
+    </div>`
 }
 
 function costStructure(f){
@@ -1039,6 +1163,18 @@ function projectModal(p=null){
       <div class="field"><label>אומדן עלות ביצוע <span class="hint">ללא מע״מ</span></label><input id="f_est" type="number" step="0.01" value="${v.estimate??''}"></div>
     </div>
     <div class="banner info" style="margin:14px 0 0">האומדן משמש כבסיס לחישוב האחוזים של המתכנן, המפקח והניהול בשלב התכנון. לאחר בחירת הקבלן הזוכה הבסיס מתחלף לסכום הזכייה, והאחוזים מתעדכנים לפיו.</div>
+    <div class="field" style="margin-top:14px">
+      <label>מקבץ <span class="hint">לקישור בין פרויקטים באותו אתר או שכונה</span></label>
+      <div style="display:flex;gap:8px">
+        <select id="f_grp" style="flex:1">
+          <option value="">— ללא מקבץ —</option>
+          ${state.groups.map(g=>`<option value="${g.id}" ${v.group_id===g.id?'selected':''}>${esc(g.name)}</option>`).join('')}
+          <option value="__new">+ מקבץ חדש…</option>
+        </select>
+        <input id="f_grpNew" placeholder="שם המקבץ" style="flex:1;display:none">
+      </div>
+    </div>
+
     <div class="grid2" style="margin-top:14px">
       <div class="field"><label>מסגרת תקציבית מאושרת <span class="hint">אופציונלי · כולל מע״מ</span></label><input id="f_bud" type="number" step="0.01" value="${v.total_budget_with_tax??''}"></div>
       <div class="field"><label>תחילת ביצוע</label><input id="f_sd" type="date" value="${v.start_date||''}"></div>
@@ -1050,19 +1186,30 @@ function projectModal(p=null){
     <div class="form-actions"><button class="btn primary" id="save">שמירה</button><button class="btn" data-c>ביטול</button></div>`,
   (ov,close)=>{
     ov.querySelector('[data-c]').onclick=close
+    const grp=ov.querySelector('#f_grp'), grpNew=ov.querySelector('#f_grpNew')
+    grp.onchange=()=>{ grpNew.style.display = grp.value==='__new' ? '' : 'none'; if(grp.value==='__new') grpNew.focus() }
     ov.querySelector('#save').onclick=async e=>{
       const name=ov.querySelector('#f_name').value.trim(), pn=ov.querySelector('#f_num').value.trim()
       if(!name||!pn) return toast('נדרשים שם פרויקט ומספר פרויקט', true)
-      const rec={ name, project_number:pn, status:ov.querySelector('#f_st').value,
-        sector: ov.querySelector('#f_sec').value || null,
-        project_kind: ov.querySelector('#f_kind').value || null,
-        locality: ov.querySelector('#f_loc').value || null,
-        estimate:num(ov.querySelector('#f_est').value),
-        total_budget_with_tax:num(ov.querySelector('#f_bud').value),
-        start_date:ov.querySelector('#f_sd').value||null,
-        expected_end_date:ov.querySelector('#f_ed').value||null }
       e.target.disabled=true; e.target.textContent='שומר…'
       try{
+        let gid = grp.value==='__new' ? null : (grp.value?Number(grp.value):null)
+        if(grp.value==='__new'){
+          const gn=grpNew.value.trim()
+          if(!gn){ e.target.disabled=false; e.target.textContent='שמירה'; return toast('נדרש שם למקבץ', true) }
+          const { data:g, error:ge } = await sb.from('project_groups').insert([{name:gn}]).select().single()
+          if(ge) throw ge
+          gid=g.id
+        }
+        const rec={ name, project_number:pn, status:ov.querySelector('#f_st').value,
+          sector: ov.querySelector('#f_sec').value || null,
+          project_kind: ov.querySelector('#f_kind').value || null,
+          locality: ov.querySelector('#f_loc').value || null,
+          group_id: gid,
+          estimate:num(ov.querySelector('#f_est').value),
+          total_budget_with_tax:num(ov.querySelector('#f_bud').value),
+          start_date:ov.querySelector('#f_sd').value||null,
+          expected_end_date:ov.querySelector('#f_ed').value||null }
         if(p){ const {error}=await sb.from('projects').update(rec).eq('id',p.id); if(error) throw error }
         else { const {error}=await sb.from('projects').insert([{...rec, status:rec.status||'investment'}]); if(error) throw error }
         close(); toast(p?'הפרויקט עודכן':'הפרויקט נוצר'); await refresh()
@@ -1374,7 +1521,7 @@ async function refresh(){
   try{
     if(state.view==='users'){ await loadUsers(); shell(); viewUsers() }
     else if(state.projectId){ await Promise.all([loadProject(state.projectId), loadPending()]); shell(); viewProject() }
-    else { await Promise.all([loadProjects(), loadPending()]); shell(); viewList() }
+    else { await Promise.all([loadProjects(), loadGroups(), loadPending()]); shell(); viewList() }
     setConn('ok','מחובר')
   }catch(err){
     setConn('bad','שגיאה')
