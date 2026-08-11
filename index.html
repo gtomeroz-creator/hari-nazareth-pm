@@ -100,6 +100,20 @@ a{color:var(--brand)}
 .cmp .gapbox.good{background:var(--ok-soft,#E7F1EA)} .cmp .gapbox.good b{color:var(--ok)}
 .cmp .gapbox.bad{background:var(--danger-soft)} .cmp .gapbox.bad b{color:var(--danger)}
 .cmp .pctg{font-size:12.5px; color:var(--ink2); margin-right:5px}
+.disc{margin-top:14px; border:1px solid var(--line); border-radius:8px; overflow:hidden; font-size:13.5px}
+.disc .drow{display:flex; align-items:center; gap:10px; padding:8px 13px; border-bottom:1px solid var(--line2); background:var(--surface)}
+.disc .drow:last-child{border-bottom:0}
+.disc .drow span{flex:1; color:var(--ink2)}
+.disc .drow b{font-variant-numeric:tabular-nums; font-weight:700}
+.disc .cut{background:#FDF7EF} .disc .cut span,.disc .cut b{color:var(--amber)}
+.disc .sub{background:#FAFCFC}
+.disc .tot{background:var(--ink)} .disc .tot span{color:#93A6B3} .disc .tot b{color:#fff; font-size:15px}
+.disc .eff{background:var(--brand-soft)} .disc .eff span,.disc .eff b{color:var(--brand-dk)}
+.dchain{font-size:12.5px; color:var(--ink2); display:flex; gap:7px; flex-wrap:wrap; align-items:center;
+  padding:9px 15px; background:#FDFAF5; border-bottom:1px solid var(--line2)}
+.dchain b{color:var(--ink); font-variant-numeric:tabular-nums}
+.dchain .ar{color:var(--ink3)}
+.dchain .eff{color:var(--brand-dk); font-weight:700}
 .cost-bar{flex:1; height:8px; background:var(--line2); border-radius:4px; overflow:hidden; min-width:50px}
 .cost-bar i{display:block; height:100%; background:var(--brand); border-radius:4px; transition:width .5s cubic-bezier(.2,.7,.3,1)}
 .cost-row.base .cost-bar i{background:var(--ink)}
@@ -243,7 +257,7 @@ const esc  = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&l
 
 const PARTY  = { contractor:'קבלן מבצע', designer:'מתכנן', inspector:'מפקח', management:'ניהול פרויקט', other:'אחר' }
 const STATUS = { investment:{t:'תוכנית השקעות',c:'st-inv'}, planning:{t:'תכנון',c:'st-planning'}, tender:{t:'מכרז',c:'st-tender'}, execution:{t:'ביצוע',c:'st-execution'}, done:{t:'הושלם',c:'st-done'} }
-const LOCALITY = { nazareth:'נצרת', reineh:'ריינה', yafia:'יפיע', iksal:'אכסאל', eilut:'עילוט', eilabun:'עילבון', multi:'רב־יישובי' }
+const LOCALITY = { nazareth:'נצרת', reineh:'ריינה', yafia:'יפיע', iksal:'אכסאל', eilut:'עילוט', multi:'רב־יישובי' }
 const FUND   = { self:'מימון עצמי', grant:'מענק', loan:'הלוואה', partner:'שותף', other:'אחר' }
 const DOCT   = { contract:'חוזה', work_order:'הזמנת עבודה', commencement:'צו התחלת עבודה',
                  guarantee_perf:'ערבות ביצוע', guarantee_bid:'ערבות מכרז', guarantee_warranty:'ערבות בדק',
@@ -531,6 +545,18 @@ async function loadPending(){
 }
 
 /* ═══════════ חישובים ═══════════ */
+// חישוב סכום הזכייה מהאומדן בניכוי שתי מדרגות ההנחה.
+// ההנחות מצטברות: ההנחה הנוספת חלה על הסכום שלאחר הנחת המסגרת.
+function discountCalc(base, d1, d2){
+  const b=Number(base||0), a=Number(d1||0), c=Number(d2||0)
+  const after1 = b*(1-a/100)
+  const after2 = after1*(1-c/100)
+  return { base:b, d1:a, d2:c, after1, after2,
+           cut1:b-after1, cut2:after1-after2, cutAll:b-after2,
+           effective: b ? (1-after2/b)*100 : 0 }
+}
+function hasDiscount(pt){ return Number(pt.discount_base||0) && (Number(pt.discount_framework||0)||Number(pt.discount_extra||0)) }
+
 // הבסיס לחישוב האחוזים: עד בחירת קבלן — האומדן. לאחר הזכייה — ערך החוזה בפועל.
 function baseInfo(parties, project){
   const c = parties.find(p=>p.is_base) || parties.find(p=>p.type==='contractor')
@@ -804,17 +830,22 @@ function costStructure(f){
   return `
     ${bi.source==='estimate'
       ? `<div class="banner warn" style="margin:0 0 14px">שלב תכנון — הבסיס לחישוב הוא האומדן. עם בחירת הקבלן הזוכה הבסיס יתחלף לסכום הזכייה וכל האחוזים יתעדכנו.</div>`
-      : (gap!==null ? `<div class="cmp">
+      : (gap!==null ? (()=>{
+          const bp = bi.party
+          const dc = bp && hasDiscount(bp) ? discountCalc(bp.discount_base, bp.discount_framework, bp.discount_extra) : null
+          return `<div class="cmp">
           <div><span class="k">אומדן</span><b class="num">${ils(bi.estimate)}</b></div>
+          ${dc && dc.d1 ? `<div class="arw">←</div><div><span class="k">הנחת מסגרת</span><b class="num">${dc.d1}%</b></div>`:''}
+          ${dc && dc.d2 ? `<div class="arw">←</div><div><span class="k">הנחה נוספת</span><b class="num">${dc.d2}%</b></div>`:''}
           <div class="arw">←</div>
-          <div><span class="k">זכייה במכרז</span><b class="num">${ils(bi.value)}</b></div>
+          <div><span class="k">סכום הזכייה</span><b class="num">${ils(bi.value)}</b></div>
           <div class="spacer"></div>
           <div class="gapbox ${gap>=0?'good':'bad'}">
             <span class="k">${gap>=0?'חיסכון מול האומדן':'חריגה מהאומדן'}</span>
             <b class="num">${ils(Math.abs(gap))}</b>
             <span class="num pctg">${bi.estimate?((Math.abs(gap)/bi.estimate)*100).toFixed(1)+'%':''}</span>
           </div>
-        </div>` : '')}
+        </div>`})() : '')}
     <div class="cost">
       ${f.lines.map(l=>`
         <div class="cost-row ${l.isBase?'base':''} ${l.virtual?'virt':''}">
@@ -884,6 +915,15 @@ function partyBlock(pt, pf){
       ${canEdit()?`<button class="btn ghost sm" data-editparty="${pt.id}">עריכה</button>
       <button class="btn danger sm" data-delparty="${pt.id}">מחיקה</button>`:''}
     </div>
+
+    ${hasDiscount(pt) ? (()=>{ const c=discountCalc(pt.discount_base, pt.discount_framework, pt.discount_extra); return `
+      <div class="dchain">
+        <span>אומדן</span><b>${ils(c.base)}</b>
+        ${c.d1?`<span class="ar">←</span><span>הנחת מסגרת</span><b>${c.d1}%</b>`:''}
+        ${c.d2?`<span class="ar">←</span><span>הנחה נוספת</span><b>${c.d2}%</b>`:''}
+        <span class="ar">←</span><span>זכייה</span><b>${ils(c.after2)}</b>
+        ${(c.d1&&c.d2)?`<span class="eff">· מצטברת ${c.effective.toFixed(2)}%</span>`:''}
+      </div>`})() : ''}
 
     <div style="padding:11px 15px;display:flex;gap:20px;flex-wrap:wrap;font-size:13.5px;border-bottom:1px solid var(--line2)">
       <span style="color:var(--ink2)">מצטבר שהוגש <b class="num" style="color:var(--ink)">${ils2(f.cumulative)}</b></span>
@@ -1054,44 +1094,94 @@ function partyModal(pt=null){
     </div>
     <div class="grid2" style="margin-top:14px">
       <div class="field" id="wrapPct"><label>אחוז מעלות הביצוע</label><input id="g_pct" type="number" step="0.01" value="${v.pct_of_base ?? v.percentage ?? ''}" placeholder="לדוגמה 3"></div>
-      <div class="field"><label>ערך חוזה ללא מע״מ</label><input id="g_val" type="number" step="0.01" value="${v.contract_value??''}"></div>
+      <div class="field" id="wrapVal"><label>ערך חוזה ללא מע״מ</label><input id="g_val" type="number" step="0.01" value="${v.contract_value??''}"></div>
     </div>
+
+    <div id="wrapDisc" style="margin-top:14px">
+      <div class="field" style="margin-bottom:14px">
+        <label>אומדן המתכנן / כתב כמויות <span class="hint">הסכום שעליו ניתנה ההנחה</span></label>
+        <input id="g_dbase" type="number" step="0.01" value="${v.discount_base ?? (pt?'':(state.project?.estimate??''))}">
+      </div>
+      <div class="grid2">
+        <div class="field"><label>הנחת חוזה מסגרת %</label><input id="g_d1" type="number" step="0.01" value="${v.discount_framework??''}" placeholder="0"></div>
+        <div class="field"><label>הנחה נוספת %</label><input id="g_d2" type="number" step="0.01" value="${v.discount_extra??''}" placeholder="0"></div>
+      </div>
+      <div id="discCalc"></div>
+    </div>
+
     <div class="banner info" id="baseNote" style="margin:14px 0 0"></div>
     <div class="form-actions"><button class="btn primary" id="save">שמירה</button><button class="btn" data-c>ביטול</button></div>`,
   (ov,close)=>{
     ov.querySelector('[data-c]').onclick=close
     const pct=ov.querySelector('#g_pct'), val=ov.querySelector('#g_val')
-    const wrapPct=ov.querySelector('#wrapPct'), note=ov.querySelector('#baseNote')
+    const wrapPct=ov.querySelector('#wrapPct'), wrapVal=ov.querySelector('#wrapVal')
+    const wrapDisc=ov.querySelector('#wrapDisc'), discCalc=ov.querySelector('#discCalc')
+    const dbase=ov.querySelector('#g_dbase'), d1=ov.querySelector('#g_d1'), d2=ov.querySelector('#g_d2')
+    const note=ov.querySelector('#baseNote')
     const getMode=()=>ov.querySelector('input[name=mode]:checked').value
     const srcTxt = bi.source==='estimate' ? 'אומדן' : 'סכום הזכייה'
+
+    const drawDisc=()=>{
+      const c=discountCalc(dbase.value, d1.value, d2.value)
+      if(!c.base){ discCalc.innerHTML=''; return c }
+      discCalc.innerHTML=`
+        <div class="disc">
+          <div class="drow"><span>אומדן המתכנן</span><b class="num">${ils2(c.base)}</b></div>
+          ${c.d1?`<div class="drow cut"><span>הנחת חוזה מסגרת ${c.d1}%</span><b class="num">−${ils2(c.cut1)}</b></div>
+          <div class="drow sub"><span>לאחר הנחת מסגרת</span><b class="num">${ils2(c.after1)}</b></div>`:''}
+          ${c.d2?`<div class="drow cut"><span>הנחה נוספת ${c.d2}%</span><b class="num">−${ils2(c.cut2)}</b></div>`:''}
+          <div class="drow tot"><span>סכום הזכייה ללא מע״מ</span><b class="num">${ils2(c.after2)}</b></div>
+          ${(c.d1&&c.d2)?`<div class="drow eff"><span>הנחה מצטברת אפקטיבית</span><b class="num">${c.effective.toFixed(2)}%</b></div>`:''}
+        </div>`
+      return c
+    }
+
     const sync=()=>{
       const m=getMode()
       ov.querySelectorAll('#modes label').forEach(l=>l.classList.toggle('on', l.dataset.m===m))
-      wrapPct.style.display = m==='pct'?'':'none'
-      val.disabled = (m==='pct')
+      wrapPct.style.display  = m==='pct'  ? '' : 'none'
+      wrapDisc.style.display = m==='base' ? '' : 'none'
+      wrapVal.style.display  = m==='pct'  ? 'none' : ''
       if(m==='pct'){
         const n=num(pct.value)
+        val.disabled=true
         val.value=(n!==null&&base)?(base*n/100).toFixed(2):''
         note.innerHTML = base
           ? `${n||0}% מתוך ${srcTxt} ${ils(base)}.${bi.source==='estimate'?' הסכום יתעדכן אוטומטית עם בחירת הקבלן הזוכה.':''}`
           : 'אין עדיין בסיס לחישוב. יש להזין <b>אומדן עלות ביצוע</b> בעריכת הפרויקט, או להגדיר קבלן זוכה.'
       } else if(m==='base'){
-        note.innerHTML='הסכום שיוזן כאן הוא סכום הזכייה במכרז. מרגע שמירתו הוא מחליף את האומדן כבסיס, וכל האחוזים בפרויקט יחושבו מחדש לפיו.'
-      } else { note.textContent='סכום קבוע שאינו תלוי בעלות הביצוע.' }
+        const c=drawDisc()
+        const auto = c.base && (c.d1||c.d2)
+        val.disabled = !!auto
+        if(auto) val.value=c.after2.toFixed(2)
+        note.innerHTML = auto
+          ? 'סכום הזכייה מחושב מהאומדן בניכוי ההנחות, ומחליף את האומדן כבסיס לכל האחוזים בפרויקט.'
+          : 'ניתן להזין את סכום הזכייה ישירות, או למלא אומדן והנחות ולתת למערכת לחשב.'
+      } else {
+        val.disabled=false
+        note.textContent='סכום קבוע שאינו תלוי בעלות הביצוע.'
+      }
     }
     ov.querySelectorAll('input[name=mode]').forEach(r=>r.onchange=sync)
-    pct.oninput=sync; sync()
+    pct.oninput=sync; dbase.oninput=sync; d1.oninput=sync; d2.oninput=sync; sync()
+
     ov.querySelector('#save').onclick=async e=>{
       const name=ov.querySelector('#g_name').value.trim()
       if(!name) return toast('נדרש שם הגורם', true)
       const m=getMode()
       if(m==='pct'&&!base) return toast('יש להזין תחילה אומדן עלות ביצוע בעריכת הפרויקט', true)
       const pv = m==='pct'?num(pct.value):null
+      const dc = m==='base'?discountCalc(dbase.value,d1.value,d2.value):null
+      const useDisc = dc && dc.base && (dc.d1||dc.d2)
       const rec={ project_id:state.project.id, type:ov.querySelector('#g_type').value, name,
         contact_info:ov.querySelector('#g_contact').value.trim()||null,
         is_base:m==='base', pct_of_base:pv, percentage:pv,
         percentage_or_fixed: m==='pct'?'percentage':'fixed',
-        contract_value: m==='pct'?base*(pv||0)/100:num(val.value) }
+        discount_base:      m==='base'?num(dbase.value):null,
+        discount_framework: m==='base'?num(d1.value):null,
+        discount_extra:     m==='base'?num(d2.value):null,
+        contract_value: m==='pct' ? base*(pv||0)/100
+                      : (useDisc ? dc.after2 : num(val.value)) }
       e.target.disabled=true; e.target.textContent='שומר…'
       try{
         if(pt){ const {error}=await sb.from('contractors').update(rec).eq('id',pt.id); if(error) throw error }
