@@ -109,6 +109,8 @@ a{color:var(--brand)}
 .disc .sub{background:#FAFCFC}
 .disc .tot{background:var(--ink)} .disc .tot span{color:#93A6B3} .disc .tot b{color:#fff; font-size:15px}
 .disc .eff{background:var(--brand-soft)} .disc .eff span,.disc .eff b{color:var(--brand-dk)}
+.verbar{text-align:center; padding:14px 20px 26px; font-size:12px; color:var(--ink3);
+  font-variant-numeric:tabular-nums; letter-spacing:.02em}
 .pick{display:flex; align-items:center; gap:10px; padding:10px 13px; border:1px solid var(--line);
   border-radius:8px; cursor:pointer; background:var(--surface); transition:.15s}
 .pick:hover{border-color:var(--ink3)}
@@ -247,6 +249,8 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 const SUPABASE_URL = 'https://tahsjngaaakjbptujfne.supabase.co'
 const SUPABASE_KEY = 'sb_publishable_qMpIAT8T-KhqdqqqF6L0ZQ_RGtNsl_U'
 const BUCKET = 'project-docs'
+const VERSION = '1.7'
+const BUILD = '11.08.2026'
 const VAT  = 0.18
 const HOLD = 0.05
 /* ══════════════════════════════ */
@@ -329,7 +333,8 @@ function renderGate(mode='in', msg='', ok=''){
     <div class="gate-note">${
       mode==='up'   ? 'לאחר ההרשמה החשבון ימתין לאישור מנהל המערכת.' :
       mode==='reset'? 'הזן את האימייל שאיתו נרשמת, ויישלח אליך קישור להגדרת סיסמה חדשה.' :
-                      'הגישה מוגבלת לעובדי התאגיד ולגורמים מאושרים.'}</div>
+                      'הגישה מוגבלת לעובדי התאגיד ולגורמים מאושרים.'}
+      <div style="margin-top:10px;opacity:.7">גרסה ${VERSION} · ${BUILD}</div></div>
   </div></div>`
 
   root.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>renderGate(b.dataset.m))
@@ -470,7 +475,8 @@ function shell(){
       <button class="tbtn" id="navOut">יציאה</button>
       <div class="conn ok" id="conn"><span class="dot"></span><span id="connTxt">מחובר</span></div>
     </div>
-    <div class="wrap" id="app"><div class="empty"><span class="spin"></span></div></div>`
+    <div class="wrap" id="app"><div class="empty"><span class="spin"></span></div></div>
+    <div class="verbar">גרסה ${VERSION} · ${BUILD}</div>`
   document.getElementById('navMe').onclick=accountModal
   const u=document.getElementById('navUsers')
   if(u) u.onclick=()=>{ state.view='users'; refresh() }
@@ -819,6 +825,7 @@ function viewProject(){
         ${SECTOR[p.sector]?`<span class="tag ${SECTOR[p.sector].c}">${SECTOR[p.sector].t}</span>`:''}
         ${KIND[p.project_kind]?`<span class="tag ${KIND[p.project_kind].c}">${KIND[p.project_kind].t}</span>`:''}
         <span class="tag ${st.c}">${st.t}</span>
+        ${canEdit()?`<button class="btn sm" id="dupProj">שכפול</button>`:''}
         ${canEdit()?`<button class="btn sm" id="editProj">עריכה</button>`:''}
       </div>
       <div class="card-b">${costStructure(f)}</div>
@@ -851,6 +858,7 @@ function viewProject(){
     </div>`
   document.getElementById('back').onclick=()=>go(null)
   const e1=document.getElementById('editProj'); if(e1) e1.onclick=()=>projectModal(p)
+  const dp=document.getElementById('dupProj'); if(dp) dp.onclick=duplicateModal
   const e2=document.getElementById('addFund'); if(e2) e2.onclick=()=>fundModal()
   appEl().querySelectorAll('#addParty,#addParty2').forEach(b=>b.onclick=()=>partyModal())
   appEl().querySelectorAll('[data-sib]').forEach(tr=>tr.onclick=()=>go(Number(tr.dataset.sib)))
@@ -859,6 +867,93 @@ function viewProject(){
 }
 
 // העתקת מתכנן, מפקח וכד' מפרויקט מקושר. הקבלן הזוכה לא מועתק — סכומו שונה בכל פרויקט.
+// שכפול פרויקט — לדוגמה: פרויקט מים משוכפל לפרויקט ביוב באותה שכונה
+function duplicateModal(){
+  const p=state.project
+  const bi=baseInfo(state.parties, state.project)
+  const nonBase=state.parties.filter(x=>!(bi.party&&bi.party.id===x.id))
+  const flip = p.sector==='water' ? 'sewage' : (p.sector==='sewage'?'water':p.sector)
+
+  modal(`שכפול · ${esc(p.name)}`, `
+    <div class="banner info">הפרויקט החדש יקבל את אותו יישוב, סוג, אומדן ומקבץ. חשבונות ומסמכים אינם משוכפלים.</div>
+    <div class="grid2">
+      <div class="field"><label>שם הפרויקט החדש</label><input id="q_name" value="${esc(p.name)}"></div>
+      <div class="field"><label>מספר פרויקט</label><input id="q_num" placeholder="חייב להיות ייחודי"></div>
+    </div>
+    <div class="grid2" style="margin-top:14px">
+      <div class="field"><label>תחום</label><select id="q_sec">
+        <option value="">— לא צוין —</option>
+        ${Object.entries(SECTOR).map(([k,s])=>`<option value="${k}" ${flip===k?'selected':''}>${s.t}</option>`).join('')}
+      </select></div>
+      <div class="field"><label>אומדן עלות ביצוע</label><input id="q_est" type="number" step="0.01" value="${p.estimate??''}"></div>
+    </div>
+
+    <div class="section-title" style="margin:20px 0 10px">מה לשכפל</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <label class="pick"><input type="checkbox" id="q_parties" checked>
+        <div style="flex:1"><b>גורמים</b><div class="pnum">${nonBase.length?nonBase.map(x=>esc(x.name)).join(' · '):'אין גורמים להעתקה'}</div></div></label>
+      ${bi.party?`<label class="pick"><input type="checkbox" id="q_base">
+        <div style="flex:1"><b>הקבלן הזוכה</b><div class="pnum">${esc(bi.party.name)} · סכום הזכייה יידרש עדכון</div></div></label>`:''}
+      <label class="pick"><input type="checkbox" id="q_fund">
+        <div style="flex:1"><b>מקורות מימון</b><div class="pnum">${state.funding.length?`${state.funding.length} מקורות`:'אין מקורות'}</div></div></label>
+      <label class="pick"><input type="checkbox" id="q_group" ${p.group_id?'checked':''}>
+        <div style="flex:1"><b>שיוך לאותו מקבץ</b><div class="pnum">${p.group_id?esc(state.groups.find(g=>g.id===p.group_id)?.name||''):'הפרויקט אינו במקבץ'}</div></div></label>
+    </div>
+
+    <div class="form-actions"><button class="btn primary" id="save">יצירת העותק</button><button class="btn" data-c>ביטול</button></div>`,
+  (ov,close)=>{
+    ov.querySelector('[data-c]').onclick=close
+    ov.querySelector('#save').onclick=async e=>{
+      const name=ov.querySelector('#q_name').value.trim()
+      const pn=ov.querySelector('#q_num').value.trim()
+      if(!name||!pn) return toast('נדרשים שם ומספר פרויקט', true)
+      const withBase = ov.querySelector('#q_base')?.checked
+      e.target.disabled=true; e.target.textContent='משכפל…'
+      try{
+        const rec={ name, project_number:pn,
+          status:'investment',
+          sector: ov.querySelector('#q_sec').value||null,
+          project_kind: p.project_kind, locality: p.locality,
+          group_id: ov.querySelector('#q_group').checked ? p.group_id : null,
+          estimate: num(ov.querySelector('#q_est').value),
+          total_budget_with_tax: null,
+          start_date: p.start_date, expected_end_date: p.expected_end_date }
+        const { data:np, error } = await sb.from('projects').insert([rec]).select().single()
+        if(error) throw error
+
+        const newBase = num(ov.querySelector('#q_est').value)||0
+        if(ov.querySelector('#q_parties').checked && nonBase.length){
+          const recs=nonBase.map(r=>{
+            const pc=Number(r.pct_of_base??r.percentage??0)||null
+            return { project_id:np.id, type:r.type, name:r.name, contact_info:r.contact_info||null,
+                     is_base:false, pct_of_base:pc, percentage:pc,
+                     percentage_or_fixed: pc?'percentage':'fixed',
+                     contract_value: pc ? newBase*pc/100 : Number(r.contract_value||0) }
+          })
+          const { error:pe } = await sb.from('contractors').insert(recs); if(pe) throw pe
+        }
+        if(withBase && bi.party){
+          const b=bi.party
+          const { error:be } = await sb.from('contractors').insert([{
+            project_id:np.id, type:b.type, name:b.name, contact_info:b.contact_info||null,
+            is_base:true, pct_of_base:null, percentage:null, percentage_or_fixed:'fixed',
+            discount_base:null, discount_framework:b.discount_framework, discount_extra:b.discount_extra,
+            contract_value:null }])
+          if(be) throw be
+        }
+        if(ov.querySelector('#q_fund').checked && state.funding.length){
+          const recs=state.funding.map(s=>({ project_id:np.id, source_type:s.source_type,
+            name:s.name, amount:s.amount, notes:s.notes }))
+          const { error:fe } = await sb.from('funding_sources').insert(recs); if(fe) throw fe
+        }
+        close(); toast('הפרויקט שוכפל')
+        await go(np.id)
+      }catch(err){ e.target.disabled=false; e.target.textContent='יצירת העותק'; toast(dbErr(err),true) }
+    }
+    ov.querySelector('#q_num').focus()
+  })
+}
+
 function copyPartiesModal(){
   const bi=baseInfo(state.parties, state.project)
   const rows=[]
